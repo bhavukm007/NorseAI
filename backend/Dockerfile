@@ -15,6 +15,8 @@ RUN --mount=type=cache,target=/root/.cache/pip \
       --retries 10 \
       --timeout 300
 COPY backend ./backend
+COPY alembic.ini .
+COPY migrations ./migrations
 USER norseai
 EXPOSE 8000
-CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn backend.app.main:app --host 0.0.0.0 --port 8000"]

@@ -49,6 +49,7 @@ Phase 2 adds no dashboard, monitoring, simulator, analytics, notification, or We
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements-dev.txt
+python -m alembic upgrade head
 uvicorn backend.app.main:app --reload
 ```
 
@@ -60,7 +61,7 @@ On macOS/Linux, activate with `source .venv/bin/activate`. The health endpoint i
 
 ```powershell
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
@@ -79,13 +80,22 @@ The containerized frontend is available at `http://localhost:3000`.
 ## Quality checks
 
 ```powershell
-ruff check backend tests
-black --check backend tests
-pytest --cov=backend
+.\.venv\Scripts\python.exe -m ruff check backend tests migrations
+.\.venv\Scripts\python.exe -m black --check backend tests migrations
+.\.venv\Scripts\python.exe -m pytest --cov=backend --cov-report=term-missing
 cd frontend
 npm run lint
 npm run format:check
 npm run build
 ```
+
+The frontend currently has no Vitest/Jest dependency, test files, or CI test job, so `npm test` is
+not a supported command. Frontend verification currently consists of ESLint, Prettier,
+TypeScript compilation, and the Vite production build. A test runner should be introduced together
+with actual dashboard behavior tests rather than adding an empty or misleading test script.
+
+On Windows, invoke backend tools through `.\.venv\Scripts\python.exe -m ...` or activate `.venv`
+first. A globally installed `pytest` launcher may use a different Python interpreter and will not
+see the dependencies installed in `.venv`.
 
 Install Git hooks with `pre-commit install`.
