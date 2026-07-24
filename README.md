@@ -54,6 +54,15 @@ Cards without a live API display an explicit unavailable state. The chat input r
 until its Phase 4 backend endpoint exists. No Phase 2 authorization boundary is bypassed. Theme
 preference is stored locally in the browser.
 
+## Phase 4 AI governance simulator
+
+The simulator now provides a complete local governance demonstration: a validated AI system
+submission, six preconfigured demo scenarios, an animated assessment pipeline, risk and compliance
+visualizations, rule findings, prioritized recommendations, and an executive decision report.
+Assessments are retained in browser storage and can be reopened, compared, deleted, or exported as
+PDF, JSON, and CSV. The scoring workflow is deterministic and complements the authenticated Phase
+2 governance APIs without duplicating or weakening their authorization boundaries.
+
 ## Local development
 
 ### Backend

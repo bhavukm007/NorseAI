@@ -1,5 +1,14 @@
 # Changelog
 
+## Phase 04
+
+- Added the interactive AI Governance Simulator with six auto-filled assessment scenarios.
+- Added animated governance processing, risk scoring, compliance KPIs, rule evaluation, and
+  prioritized recommendations.
+- Added Recharts radar, donut, severity, category, and assessment-trend visualizations.
+- Added persistent local assessment history with report reopening, comparison, and deletion.
+- Added professional executive reports with PDF, JSON, and CSV exports.
+
 All notable changes to NorseAI are documented here.
 
 ## [Unreleased]
