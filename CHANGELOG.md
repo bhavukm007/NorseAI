@@ -1,5 +1,14 @@
 # Changelog
 
+## Phase 05
+
+- Added one-click judge demo mode and a polished dashboard launch experience.
+- Added global crash recovery, accessible loading states, skip navigation, chart descriptions, and
+  export progress feedback.
+- Hardened browser-local assessment storage with runtime validation and bounded retention.
+- Improved reserved-route content, responsive states, bundle loading, and submission documentation.
+- Completed final configuration, security, performance, accessibility, and quality review.
+
 ## Phase 04
 
 - Added the interactive AI Governance Simulator with six auto-filled assessment scenarios.

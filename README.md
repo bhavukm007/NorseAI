@@ -1,85 +1,82 @@
 # NorseAI
 
-Enterprise governance platform for autonomous financial agents.
+NorseAI is an enterprise AI governance platform for registering autonomous agents, enforcing
+policy and spend controls, evaluating AI-system risk, and producing audit-ready compliance
+reports.
 
-## Phase 1 foundation
+## The problem
 
-This branch contains only the production foundation:
+Organizations adopting autonomous and high-impact AI need a consistent way to understand what
+systems do, which rules apply, how risk is controlled, and who approved deployment. Evidence is
+often distributed across spreadsheets, policy documents, and operational tools, making reviews
+slow and difficult to audit.
 
-- Versioned FastAPI service with typed environment settings, JSON logging, dependency injection,
-  CORS, OpenAPI, and a health endpoint.
-- React, TypeScript, and Vite application shell with routing, responsive layout, a sidebar, and a
-  deliberately non-functional dashboard placeholder.
-- Docker Compose services for the API, web application, PostgreSQL, Redis, and OPA.
-- Ruff, Black, pytest, ESLint, Prettier, EditorConfig, pre-commit, and GitHub Actions.
+## The solution
 
-Dashboard and simulator behavior remain intentionally deferred.
+NorseAI combines a secure governance API with a polished assessment workspace. Teams can manage
+agents and policies through authenticated APIs, then demonstrate the complete governance journey
+in the AI Governance Simulator—from system submission and rule evaluation through risk scoring,
+remediation, and an executive decision report.
 
-## Phase 2 governance engine
+## Product capabilities
 
-The backend provides authenticated `/api/v1` APIs for agent and policy management, permission
-assignment and evaluation, spend limits, emergency agent controls, and read-only audit history.
-JWT claims carry `username`, `role`, and a required user UUID in `sub`; supported roles are
-`admin`, `operator`, `auditor`, and `viewer`.
+- Validated AI-system intake with six enterprise demo scenarios
+- Animated eight-stage governance assessment pipeline
+- Privacy, security, fairness, transparency, accountability, and regulatory risk analysis
+- Governance rule findings with passed, warning, and failed states
+- Compliance KPIs and accessible animated data visualizations
+- Prioritized, actionable remediation recommendations
+- Executive report generation with PDF, JSON, and CSV exports
+- Browser-local assessment history with reopen, comparison, and deletion
+- One-click judge demo that completes in seconds
+- Responsive light and dark themes with keyboard and screen-reader support
+- Authenticated agent, policy, permission, spend-control, emergency-action, and audit APIs
 
-JWTs must include `exp`, `iat`, `nbf`, `iss`, `aud`, `sub`, `username`, and `role`. Configure
-`APP_JWT_SECRET`, `APP_JWT_ISSUER`, and `APP_JWT_AUDIENCE`; non-development environments refuse to
-start without a secret.
+## Architecture
 
-Permission decisions are ordered by descending priority, then DENY → CONDITIONAL → ALLOW, then
-oldest creation timestamp, then UUID. This makes every conflict deterministic.
-
-`POST /api/v1/spend/evaluate` evaluates transaction, daily, and monthly limits in that order.
-Allowed evaluations are recorded as spend so later daily/monthly decisions use cumulative totals.
-All timestamps are evaluated in UTC.
-
-Apply the PostgreSQL schema before starting the API:
-
-```powershell
-alembic upgrade head
+```mermaid
+flowchart LR
+    UI["React governance workspace"] --> API["FastAPI /api/v1"]
+    UI --> LS["Browser-local assessment history"]
+    API --> GOV["Governance services"]
+    GOV --> DB["PostgreSQL"]
+    GOV --> AUDIT["Immutable audit trail"]
+    API -. future adapters .-> REDIS["Redis"]
+    API -. policy integration .-> OPA["Open Policy Agent"]
 ```
 
-Phase 2 adds no simulator, analytics, or WebSocket behavior.
+The public simulator uses deterministic client-side assessment logic for a reliable hackathon
+demonstration. Authenticated operational governance remains behind the FastAPI authorization
+boundary and is not duplicated or bypassed by the simulator.
 
-## Phase 3 dashboard
+## Technology stack
 
-The frontend now provides a responsive operator dashboard with a collapsible desktop sidebar,
-mobile navigation drawer, sticky header, light and dark themes, live backend health polling,
-governance status cards, system metrics, recent activity, and an AI chat experience. The dashboard
-uses skeleton, empty/error-safe, and retryable states so intermittent API availability never
-produces a blank screen.
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 19, TypeScript, Vite, React Router |
+| Forms and state | React Hook Form, Zod, TanStack Query |
+| UI and motion | Lucide, Framer Motion, responsive CSS design system |
+| Visualization | Recharts |
+| Report export | jsPDF, native JSON and CSV generation |
+| Backend | FastAPI, Pydantic, SQLAlchemy |
+| Persistence | PostgreSQL, Alembic |
+| Security | JWT claims, role-based access control, deterministic policy precedence |
+| Quality | Pytest, Vitest, Testing Library, ESLint, Prettier, Ruff, Black |
 
-The health card reads the public `/api/v1/health` endpoint every 30 seconds and on manual refresh.
-Cards without a live API display an explicit unavailable state. The chat input remains disabled
-until its Phase 4 backend endpoint exists. No Phase 2 authorization boundary is bypassed. Theme
-preference is stored locally in the browser.
+## Run locally
 
-## Phase 4 AI governance simulator
-
-The simulator now provides a complete local governance demonstration: a validated AI system
-submission, six preconfigured demo scenarios, an animated assessment pipeline, risk and compliance
-visualizations, rule findings, prioritized recommendations, and an executive decision report.
-Assessments are retained in browser storage and can be reopened, compared, deleted, or exported as
-PDF, JSON, and CSV. The scoring workflow is deterministic and complements the authenticated Phase
-2 governance APIs without duplicating or weakening their authorization boundaries.
-
-## Local development
-
-### Backend
+Requirements: Python 3.11+, Node.js 20+, and PostgreSQL for persistent governance APIs.
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements-dev.txt
+copy .env.example .env
 python -m alembic upgrade head
 uvicorn backend.app.main:app --reload
 ```
 
-On macOS/Linux, activate with `source .venv/bin/activate`. The health endpoint is
-`http://localhost:8000/api/v1/health`; interactive API documentation is at
-`http://localhost:8000/docs`.
-
-### Frontend
+In a second terminal:
 
 ```powershell
 cd frontend
@@ -87,39 +84,92 @@ npm ci
 npm run dev
 ```
 
-The web application is served at `http://localhost:5173`.
+Open `http://localhost:5173`. API documentation is available at `http://localhost:8000/docs` in
+development. A full container stack can be started with `docker compose up --build`; the web
+application is then served at `http://localhost:3000`.
 
-### Full stack
+Never use the example JWT or database secrets outside local development. Set a random
+`APP_JWT_SECRET` of at least 32 bytes, restrict `APP_CORS_ORIGINS`, disable API documentation, and
+use managed database credentials for staging or production.
 
-Copy `.env.example` to `.env`, replace the development database password, then run:
+## API overview
 
-```powershell
-docker compose up --build
+All governance routes are versioned below `/api/v1`. The health endpoint is public. Governance
+resources require a signed bearer token with issuer, audience, lifetime, subject, username, and
+role claims.
+
+| Area | Representative endpoints |
+| --- | --- |
+| Health | `GET /health` |
+| Agents | `POST /agents`, `GET /agents`, `PATCH /agents/{id}` |
+| Policies | `POST /policies`, `GET /policies`, `PATCH /policies/{id}` |
+| Decisions | `POST /permissions/evaluate`, `POST /spend/evaluate` |
+| Emergency control | `POST /agents/{id}/disable`, `/suspend`, `/enable` |
+| Audit | `GET /audit-logs` |
+
+See [API design](docs/api/api-design.md) and the interactive development documentation for the
+complete schemas and role matrix.
+
+## Project structure
+
+```text
+backend/app/              FastAPI application, schemas, repositories, and services
+frontend/src/app/         Routing and application composition
+frontend/src/components/  Reusable layout, dashboard, chat, and feedback components
+frontend/src/features/    Dashboard and governance simulator feature modules
+frontend/src/styles/      Design tokens and responsive component styles
+tests/                    Backend API, security, and integration tests
+docs/                     Architecture, design, phase, and submission documentation
+migrations/               Alembic database migrations
 ```
 
-The containerized frontend is available at `http://localhost:3000`.
+## Judge demo
+
+1. Open the dashboard in either theme.
+2. Select **Run judge demo**.
+3. The Healthcare Diagnostic AI submission loads automatically.
+4. Follow the animated governance pipeline to the completed risk and compliance dashboard.
+5. Open the executive report and export it as PDF.
+6. Return to assessment history to demonstrate persistence and comparison.
+
+The complete automated flow takes well under one minute and does not depend on network access.
+See the [demo script](docs/submission/demo-script.md) for the recommended narration.
 
 ## Quality checks
 
 ```powershell
 .\.venv\Scripts\python.exe -m ruff check backend tests migrations
 .\.venv\Scripts\python.exe -m black --check backend tests migrations
-.\.venv\Scripts\python.exe -m pytest --cov=backend --cov-report=term-missing
+.\.venv\Scripts\python.exe -m pytest
 cd frontend
 npm run lint
 npm run format:check
+npm run test
 npm run build
 ```
 
-The frontend uses Vitest and Testing Library for dashboard component and interaction coverage:
+The optional PostgreSQL integration test requires `POSTGRES_TEST_DATABASE_URL`.
 
-```powershell
-cd frontend
-npm test
-```
+## Screenshots
 
-On Windows, invoke backend tools through `.\.venv\Scripts\python.exe -m ...` or activate `.venv`
-first. A globally installed `pytest` launcher may use a different Python interpreter and will not
-see the dependencies installed in `.venv`.
+Capture the final submission images at:
 
-Install Git hooks with `pre-commit install`.
+- Dashboard overview in light mode
+- Automated governance pipeline
+- Risk and compliance dashboard in dark mode
+- Executive decision report
+
+The repository includes a social preview at `frontend/public/og.jpg`.
+
+## Roadmap
+
+- Persist simulator assessments through authenticated organization workspaces
+- Add regulation-specific control packs and evidence attachments
+- Connect live OPA decisions and portfolio analytics
+- Add signed report attestations and scheduled reassessments
+- Extend notification and collaboration integrations
+
+## Team
+
+Built by the NorseAI team for the AI governance hackathon. Add final contributor names and contact
+details here before public submission if required by the event.
