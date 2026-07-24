@@ -1,18 +1,38 @@
 import type { Assessment } from "./types";
 
 const STORAGE_KEY = "norseai.assessments.v1";
+const MAX_SAVED_ASSESSMENTS = 50;
+
+function isAssessment(value: unknown): value is Assessment {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Partial<Assessment>;
+  return (
+    typeof item.id === "string" &&
+    typeof item.createdAt === "string" &&
+    typeof item.riskScore === "number" &&
+    typeof item.compliance === "number" &&
+    Array.isArray(item.rules) &&
+    Array.isArray(item.recommendations) &&
+    typeof item.submission?.systemName === "string"
+  );
+}
 
 export function loadAssessments(): Assessment[] {
   try {
-    const value = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]") as Assessment[];
-    return Array.isArray(value) ? value : [];
+    const value: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]");
+    return Array.isArray(value) ? value.filter(isAssessment).slice(0, MAX_SAVED_ASSESSMENTS) : [];
   } catch {
     return [];
   }
 }
 
 export function saveAssessments(items: Assessment[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, MAX_SAVED_ASSESSMENTS)));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function download(name: string, content: BlobPart, type: string) {
@@ -20,8 +40,9 @@ function download(name: string, content: BlobPart, type: string) {
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = name;
+  anchor.rel = "noopener";
   anchor.click();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 export function exportJson(assessment: Assessment) {

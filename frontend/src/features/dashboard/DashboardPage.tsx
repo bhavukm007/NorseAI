@@ -1,4 +1,5 @@
-import { Bot, BrainCircuit, Radio, RefreshCw, ScrollText, ShieldCheck } from "lucide-react";
+import { Bot, BrainCircuit, Play, Radio, RefreshCw, ScrollText, ShieldCheck } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { ChatPanel } from "../../components/chat/ChatPanel";
 import { ActivityFeed } from "../../components/dashboard/ActivityFeed";
@@ -22,6 +23,15 @@ export function DashboardPage() {
           <h1>Operations overview</h1>
           <p>Live status is shown only where a backend data source is available.</p>
         </div>
+        <Link className="demo-launch-button" to="/simulator?demo=1">
+          <span>
+            <Play size={15} fill="currentColor" />
+          </span>
+          <div>
+            <strong>Run judge demo</strong>
+            <small>Complete governance flow</small>
+          </div>
+        </Link>
       </section>
 
       {error && (
@@ -59,9 +69,9 @@ export function DashboardPage() {
         <StatusCard
           icon={Bot}
           title="Simulator status"
-          value="—"
-          detail="Simulator backend is scheduled for Phase 04"
-          unavailable
+          value="Ready"
+          detail="Interactive governance assessments available"
+          tone="positive"
         />
         <StatusCard
           icon={ScrollText}

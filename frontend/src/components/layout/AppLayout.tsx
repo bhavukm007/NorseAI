@@ -25,6 +25,9 @@ export function AppLayout() {
 
   return (
     <div className={`app-shell ${collapsed ? "sidebar-collapsed" : ""}`}>
+      <a className="skip-link" href="#main-content">
+        Skip to main content
+      </a>
       <Sidebar
         collapsed={collapsed}
         mobileOpen={mobileOpen}
@@ -40,7 +43,7 @@ export function AppLayout() {
       )}
       <div className="app-workspace">
         <TopHeader mobileOpen={mobileOpen} onMenu={() => setMobileOpen(true)} />
-        <main className="main-content">
+        <main className="main-content" id="main-content" tabIndex={-1}>
           <Outlet />
         </main>
       </div>

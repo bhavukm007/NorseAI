@@ -15,6 +15,7 @@ import {
   FileText,
   History,
   LoaderCircle,
+  PlayCircle,
   RotateCcw,
   Scale,
   ShieldCheck,
@@ -22,8 +23,9 @@ import {
   Trash2,
   XCircle,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useSearchParams } from "react-router-dom";
 import {
   Bar,
   BarChart,
@@ -99,10 +101,12 @@ function StatusIcon({ status }: { status: RuleStatus }) {
 
 function SubmissionForm({
   onSubmit,
+  onDemo,
   historyCount,
   onHistory,
 }: {
   onSubmit: (value: SystemSubmission) => void;
+  onDemo: () => void;
   historyCount: number;
   onHistory: () => void;
 }) {
@@ -127,9 +131,14 @@ function SubmissionForm({
             guided assessment.
           </p>
         </div>
-        <button className="secondary-button" type="button" onClick={onHistory}>
-          <History size={16} /> Assessment history <span>{historyCount}</span>
-        </button>
+        <div className="simulator-hero-actions">
+          <button className="demo-button" type="button" onClick={onDemo}>
+            <PlayCircle size={17} /> Run judge demo
+          </button>
+          <button className="secondary-button" type="button" onClick={onHistory}>
+            <History size={16} /> Assessment history <span>{historyCount}</span>
+          </button>
+        </div>
       </section>
 
       <section className="sim-card demo-picker">
@@ -252,7 +261,13 @@ function SubmissionForm({
 function Pipeline({ activeStage, name }: { activeStage: number; name: string }) {
   const progress = Math.round(((activeStage + 1) / pipelineStages.length) * 100);
   return (
-    <motion.section className="pipeline-view" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+    <motion.section
+      className="pipeline-view"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      aria-live="polite"
+      aria-busy="true"
+    >
       <div className="pipeline-orb">
         <LoaderCircle size={35} />
         <span>{progress}%</span>
@@ -303,10 +318,12 @@ function Ring({ value, label }: { value: number; label: string }) {
 
 function AssessmentDashboard({
   assessment,
+  demoMode,
   onReport,
   onReset,
 }: {
   assessment: Assessment;
+  demoMode: boolean;
   onReport: () => void;
   onReset: () => void;
 }) {
@@ -332,6 +349,16 @@ function AssessmentDashboard({
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="results-view">
+      {demoMode && (
+        <div className="demo-complete-banner" role="status">
+          <CheckCircle2 size={18} />
+          <div>
+            <strong>Judge demo complete</strong>
+            <span>All governance stages finished and the executive report is ready.</span>
+          </div>
+          <button onClick={onReport}>Open report</button>
+        </div>
+      )}
       <section className="results-header">
         <div>
           <span className="eyebrow">Assessment complete</span>
@@ -412,7 +439,7 @@ function AssessmentDashboard({
       </section>
 
       <section className="charts-grid">
-        <div className="sim-card chart-card">
+        <div className="sim-card chart-card" role="img" aria-label="Risk score by control domain">
           <div className="section-heading">
             <div>
               <span className="section-label">Risk posture</span>
@@ -437,7 +464,11 @@ function AssessmentDashboard({
             </RadarChart>
           </ResponsiveContainer>
         </div>
-        <div className="sim-card chart-card donut-card">
+        <div
+          className="sim-card chart-card donut-card"
+          role="img"
+          aria-label={`${assessment.compliance}% compliance`}
+        >
           <div className="section-heading">
             <div>
               <span className="section-label">Compliance posture</span>
@@ -465,7 +496,7 @@ function AssessmentDashboard({
             </span>
           </div>
         </div>
-        <div className="sim-card chart-card">
+        <div className="sim-card chart-card" role="img" aria-label="Findings by severity">
           <div className="section-heading">
             <div>
               <span className="section-label">Findings</span>
@@ -486,7 +517,7 @@ function AssessmentDashboard({
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div className="sim-card chart-card">
+        <div className="sim-card chart-card" role="img" aria-label="Assessment risk trend">
           <div className="section-heading">
             <div>
               <span className="section-label">Portfolio context</span>
@@ -511,7 +542,11 @@ function AssessmentDashboard({
             </LineChart>
           </ResponsiveContainer>
         </div>
-        <div className="sim-card chart-card chart-wide">
+        <div
+          className="sim-card chart-card chart-wide"
+          role="img"
+          aria-label="Risk score comparison across governance categories"
+        >
           <div className="section-heading">
             <div>
               <span className="section-label">Domain comparison</span>
@@ -617,6 +652,17 @@ function AssessmentDashboard({
 
 function ExecutiveReport({ assessment, onBack }: { assessment: Assessment; onBack: () => void }) {
   const failed = assessment.rules.filter((rule) => rule.status === "Failed");
+  const [exporting, setExporting] = useState(false);
+
+  const handlePdfExport = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      await exportPdf(assessment);
+    } finally {
+      setExporting(false);
+    }
+  };
   return (
     <motion.div
       className="report-view"
@@ -628,8 +674,14 @@ function ExecutiveReport({ assessment, onBack }: { assessment: Assessment; onBac
           <ChevronRight className="back-icon" size={15} /> Back to results
         </button>
         <div>
-          <button title="Export PDF" onClick={() => exportPdf(assessment)}>
-            <Download size={15} /> PDF
+          <button
+            title="Export PDF"
+            disabled={exporting}
+            aria-busy={exporting}
+            onClick={() => void handlePdfExport()}
+          >
+            {exporting ? <LoaderCircle className="spin-icon" size={15} /> : <Download size={15} />}{" "}
+            {exporting ? "Preparing…" : "PDF"}
           </button>
           <button title="Export JSON" onClick={() => exportJson(assessment)}>
             <FileJson size={15} /> JSON
@@ -873,11 +925,26 @@ function HistoryView({
 }
 
 export function SimulatorPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [view, setView] = useState<View>("submission");
   const [activeStage, setActiveStage] = useState(0);
   const [pending, setPending] = useState<SystemSubmission | null>(null);
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [history, setHistory] = useState(loadAssessments);
+  const [demoMode, setDemoMode] = useState(false);
+
+  const startAssessment = useCallback((submission: SystemSubmission, isDemo = false) => {
+    setDemoMode(isDemo);
+    setPending(submission);
+    setActiveStage(0);
+    setView("pipeline");
+  }, []);
+
+  useEffect(() => {
+    if (searchParams.get("demo") !== "1" || view !== "submission") return;
+    setSearchParams({}, { replace: true });
+    startAssessment(demoSystems[0], true);
+  }, [searchParams, setSearchParams, startAssessment, view]);
 
   useEffect(() => {
     if (view !== "pipeline" || !pending) return;
@@ -905,6 +972,7 @@ export function SimulatorPage() {
       return (
         <AssessmentDashboard
           assessment={assessment}
+          demoMode={demoMode}
           onReport={() => setView("report")}
           onReset={() => setView("submission")}
         />
@@ -931,14 +999,11 @@ export function SimulatorPage() {
       <SubmissionForm
         historyCount={history.length}
         onHistory={() => setView("history")}
-        onSubmit={(submission) => {
-          setPending(submission);
-          setActiveStage(0);
-          setView("pipeline");
-        }}
+        onDemo={() => startAssessment(demoSystems[0], true)}
+        onSubmit={(submission) => startAssessment(submission)}
       />
     );
-  }, [activeStage, assessment, history, pending, view]);
+  }, [activeStage, assessment, demoMode, history, pending, startAssessment, view]);
 
   return (
     <div className="simulator-page">

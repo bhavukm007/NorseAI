@@ -38,8 +38,16 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def require_production_secret(self) -> "Settings":
-        if self.environment != "development" and self.jwt_secret is None:
-            raise ValueError("APP_JWT_SECRET is required outside development")
+        if self.environment != "development":
+            if self.jwt_secret is None:
+                raise ValueError("APP_JWT_SECRET is required outside development")
+            if (
+                self.environment in {"staging", "production"}
+                and len(self.jwt_secret.get_secret_value()) < 32
+            ):
+                raise ValueError("APP_JWT_SECRET must contain at least 32 characters")
+        if self.environment == "production" and self.debug:
+            raise ValueError("APP_DEBUG must be false in production")
         return self
 
 

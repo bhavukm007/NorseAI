@@ -22,7 +22,17 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   });
 
   if (!response.ok) {
-    throw new ApiError(`API request failed with status ${response.status}.`, response.status);
+    let message =
+      response.status >= 500
+        ? "The service is temporarily unavailable."
+        : "The request could not be completed.";
+    try {
+      const body = (await response.json()) as { error?: { message?: string } };
+      if (body.error?.message) message = body.error.message;
+    } catch {
+      // Some gateways return an empty or non-JSON error response.
+    }
+    throw new ApiError(message, response.status);
   }
   return (await response.json()) as T;
 }

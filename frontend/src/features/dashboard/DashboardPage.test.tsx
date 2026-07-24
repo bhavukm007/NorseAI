@@ -27,7 +27,8 @@ describe("DashboardPage", () => {
 
     expect(screen.getByRole("heading", { name: "Operations overview" })).toBeInTheDocument();
     expect(await screen.findByText("Connected")).toBeInTheDocument();
-    expect(screen.getAllByText("Not connected")).toHaveLength(4);
+    expect(screen.getAllByText("Not connected")).toHaveLength(3);
+    expect(screen.getByText("Ready")).toBeInTheDocument();
     expect(screen.getByText("AI chat is not connected")).toBeInTheDocument();
   });
 

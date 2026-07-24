@@ -1,15 +1,23 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 
 import { SimulatorPage } from "./SimulatorPage";
 
 describe("SimulatorPage", () => {
   beforeEach(() => localStorage.clear());
 
+  const renderSimulator = (path = "/simulator") =>
+    render(
+      <MemoryRouter initialEntries={[path]}>
+        <SimulatorPage />
+      </MemoryRouter>,
+    );
+
   it("populates the submission from a demo system", async () => {
     const user = userEvent.setup();
-    render(<SimulatorPage />);
+    renderSimulator();
 
     await user.click(screen.getByRole("button", { name: /Healthcare Diagnostic AI/i }));
 
@@ -19,10 +27,22 @@ describe("SimulatorPage", () => {
   });
 
   it("shows validation errors for an empty assessment", async () => {
-    render(<SimulatorPage />);
+    renderSimulator();
 
     fireEvent.click(screen.getByRole("button", { name: /Run assessment/i }));
 
     expect(await screen.findByText("Enter the AI system name")).toBeInTheDocument();
+  });
+
+  it("starts the complete judge demo with one action", async () => {
+    const user = userEvent.setup();
+    renderSimulator();
+
+    await user.click(screen.getByRole("button", { name: /Run judge demo/i }));
+
+    expect(
+      screen.getByRole("heading", { name: /Evaluating Healthcare Diagnostic AI/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Assessment in progress")).toBeInTheDocument();
   });
 });

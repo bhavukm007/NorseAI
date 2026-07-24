@@ -16,6 +16,72 @@
   gap: 18px;
 }
 
+.simulator-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.demo-button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 15px;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  border-radius: 9px;
+  color: #dffbf6;
+  background: linear-gradient(135deg, #123f3a, #167e72);
+  box-shadow: 0 8px 22px rgb(19 184 166 / 18%);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 750;
+}
+
+.demo-button:hover {
+  transform: translateY(-1px);
+}
+
+.demo-complete-banner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 16px;
+  padding: 13px 15px;
+  border: 1px solid color-mix(in srgb, var(--success) 32%, var(--border));
+  border-radius: 11px;
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 7%, var(--surface));
+}
+
+.demo-complete-banner strong,
+.demo-complete-banner span {
+  display: block;
+}
+
+.demo-complete-banner strong {
+  color: var(--text);
+  font-size: 0.74rem;
+}
+
+.demo-complete-banner span {
+  margin-top: 2px;
+  color: var(--text-soft);
+  font-size: 0.64rem;
+}
+
+.demo-complete-banner button {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
 .simulator-hero,
 .results-header {
   margin-bottom: 24px;
@@ -968,6 +1034,15 @@
   font-size: 1rem;
 }
 
+.report-toolbar button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+
 @media (max-width: 1180px) {
   .demo-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -991,6 +1066,17 @@
   .executive-report footer {
     align-items: flex-start;
     flex-direction: column;
+  }
+  .simulator-hero-actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .demo-complete-banner {
+    grid-template-columns: auto 1fr;
+  }
+  .demo-complete-banner button {
+    grid-column: 1 / -1;
   }
   .demo-grid,
   .history-grid {
