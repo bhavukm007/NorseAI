@@ -1,0 +1,92 @@
+name: norseai
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      APP_ENVIRONMENT: development
+      APP_DATABASE_URL: postgresql+psycopg://norseai:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-norseai}
+      APP_JWT_SECRET: ${JWT_SECRET:-}
+      APP_JWT_ISSUER: ${JWT_ISSUER:-norseai}
+      APP_JWT_AUDIENCE: ${JWT_AUDIENCE:-norseai-api}
+      APP_REDIS_URL: redis://redis:6379/0
+      APP_OPA_URL: http://opa:8181
+      APP_CORS_ORIGINS: '["http://localhost:3000"]'
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      opa:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:8000/api/v1
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-norseai}
+      POSTGRES_USER: ${POSTGRES_USER:-norseai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-norseai} -d ${POSTGRES_DB:-norseai}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  opa:
+    image: openpolicyagent/opa:0.70.0
+    command: ["run", "--server", "--addr=0.0.0.0:8181"]
+    healthcheck:
+      test: ["CMD", "/opa", "eval", "1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:

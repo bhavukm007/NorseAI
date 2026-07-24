@@ -1,0 +1,1 @@
+"""NorseAI API application."""
