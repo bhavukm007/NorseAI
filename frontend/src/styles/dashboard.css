@@ -1,0 +1,246 @@
+.dashboard-page {
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+.dashboard-intro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.dashboard-intro p {
+  margin-bottom: 0;
+  color: var(--text-soft);
+  font-size: 0.88rem;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(145px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.metric-card,
+.panel {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.metric-card {
+  position: relative;
+  display: flex;
+  min-height: 172px;
+  flex-direction: column;
+  padding: 17px;
+  overflow: hidden;
+  border-radius: 13px;
+  transition:
+    border-color 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.metric-card::after {
+  position: absolute;
+  right: -30px;
+  bottom: -42px;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  content: "";
+}
+
+.metric-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  box-shadow: 0 16px 44px rgb(20 33 37 / 10%);
+  transform: translateY(-2px);
+}
+
+.metric-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 17px;
+}
+
+.metric-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 9px;
+  color: var(--text-soft);
+  background: var(--surface-soft);
+}
+
+.tone-positive .metric-icon {
+  color: var(--success);
+  background: var(--accent-soft);
+}
+
+.tone-warning .metric-icon {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 11%, var(--surface));
+}
+
+.tone-accent .metric-icon {
+  color: var(--purple);
+  background: color-mix(in srgb, var(--purple) 10%, var(--surface));
+}
+
+.is-unavailable {
+  box-shadow: none;
+}
+
+.is-unavailable .metric-value {
+  color: var(--text-faint);
+}
+
+.metric-trend {
+  color: var(--success);
+  font-size: 0.64rem;
+  font-weight: 700;
+}
+
+.metric-title {
+  color: var(--text-soft);
+  font-size: 0.69rem;
+  font-weight: 560;
+}
+
+.metric-value {
+  margin-top: 4px;
+  font-size: 1.25rem;
+  letter-spacing: -0.025em;
+}
+
+.metric-detail {
+  margin-top: 9px;
+  color: var(--text-faint);
+  font-size: 0.62rem;
+  line-height: 1.4;
+}
+
+.placeholder-badge {
+  align-self: flex-start;
+  margin-top: auto;
+  padding: 4px 7px;
+  border-radius: 5px;
+  color: var(--text-soft);
+  background: var(--surface-soft);
+  font-size: 0.55rem;
+  font-weight: 700;
+}
+
+.dashboard-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.8fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.primary-column {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.83fr) minmax(300px, 1.17fr);
+  gap: 16px;
+}
+
+.panel {
+  border-radius: 14px;
+}
+
+.panel-header {
+  display: flex;
+  min-height: 70px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-header h2 {
+  margin: 0;
+  font-size: 0.93rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.empty-state,
+.chat-unavailable {
+  display: flex;
+  min-height: 215px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 28px;
+  color: var(--text-soft);
+  text-align: center;
+}
+
+.empty-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 12px;
+  place-items: center;
+  border-radius: 11px;
+  color: var(--text-faint);
+  background: var(--surface-soft);
+}
+
+.empty-state strong,
+.chat-unavailable strong {
+  color: var(--text);
+  font-size: 0.78rem;
+}
+
+.empty-state p,
+.chat-unavailable p {
+  max-width: 280px;
+  margin: 7px 0 0;
+  color: var(--text-faint);
+  font-size: 0.65rem;
+  line-height: 1.55;
+}
+
+.skeleton {
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--surface-soft), var(--border), var(--surface-soft));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+
+.skeleton-square {
+  width: 34px;
+  height: 34px;
+}
+
+.skeleton-line {
+  width: 90%;
+  height: 7px;
+  margin-top: 12px;
+}
+
+.skeleton-line.short {
+  width: 55%;
+}
+
+.skeleton-value {
+  width: 70%;
+  height: 20px;
+  margin-top: 9px;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}

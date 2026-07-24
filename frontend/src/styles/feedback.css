@@ -1,0 +1,116 @@
+.inline-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 13px 15px;
+  border: 1px solid color-mix(in srgb, var(--warning) 28%, var(--border));
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--warning) 6%, var(--surface));
+}
+
+.inline-alert div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.7rem;
+}
+
+.inline-alert span {
+  color: var(--text-soft);
+  font-size: 0.64rem;
+}
+
+.inline-alert button,
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 11px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 0.67rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.toast-region {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 100;
+  display: flex;
+  width: min(360px, calc(100vw - 40px));
+  flex-direction: column;
+  gap: 9px;
+  pointer-events: none;
+}
+
+.toast {
+  display: grid;
+  grid-template-columns: 23px minmax(0, 1fr) 24px;
+  gap: 9px;
+  align-items: start;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  color: var(--text);
+  background: var(--surface-raised);
+  box-shadow: 0 18px 48px rgb(8 18 20 / 18%);
+  animation: toast-in 220ms ease-out;
+  pointer-events: auto;
+}
+
+.toast > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.toast strong {
+  font-size: 0.72rem;
+}
+
+.toast span {
+  color: var(--text-soft);
+  font-size: 0.63rem;
+  line-height: 1.4;
+}
+
+.toast button {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 0;
+  color: var(--text-faint);
+  background: transparent;
+  cursor: pointer;
+}
+
+.toast-success > svg {
+  color: var(--success);
+}
+
+.toast-error > svg {
+  color: var(--danger);
+}
+
+.toast-warning > svg {
+  color: var(--warning);
+}
+
+.toast-info > svg {
+  color: #438fc4;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+}
