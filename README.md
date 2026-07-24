@@ -39,7 +39,20 @@ Apply the PostgreSQL schema before starting the API:
 alembic upgrade head
 ```
 
-Phase 2 adds no dashboard, monitoring, simulator, analytics, notification, or WebSocket behavior.
+Phase 2 adds no simulator, analytics, or WebSocket behavior.
+
+## Phase 3 dashboard
+
+The frontend now provides a responsive operator dashboard with a collapsible desktop sidebar,
+mobile navigation drawer, sticky header, light and dark themes, live backend health polling,
+governance status cards, system metrics, recent activity, and an AI chat experience. The dashboard
+uses skeleton, empty/error-safe, and retryable states so intermittent API availability never
+produces a blank screen.
+
+The health card reads the public `/api/v1/health` endpoint every 30 seconds and on manual refresh.
+Cards without a live API display an explicit unavailable state. The chat input remains disabled
+until its Phase 4 backend endpoint exists. No Phase 2 authorization boundary is bypassed. Theme
+preference is stored locally in the browser.
 
 ## Local development
 
@@ -89,10 +102,12 @@ npm run format:check
 npm run build
 ```
 
-The frontend currently has no Vitest/Jest dependency, test files, or CI test job, so `npm test` is
-not a supported command. Frontend verification currently consists of ESLint, Prettier,
-TypeScript compilation, and the Vite production build. A test runner should be introduced together
-with actual dashboard behavior tests rather than adding an empty or misleading test script.
+The frontend uses Vitest and Testing Library for dashboard component and interaction coverage:
+
+```powershell
+cd frontend
+npm test
+```
 
 On Windows, invoke backend tools through `.\.venv\Scripts\python.exe -m ...` or activate `.venv`
 first. A globally installed `pytest` launcher may use a different Python interpreter and will not

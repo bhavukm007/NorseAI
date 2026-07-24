@@ -6,6 +6,13 @@ All notable changes to NorseAI are documented here.
 
 ### Added
 
+- Phase 3 premium operator dashboard with responsive navigation, system status cards, health
+  polling, metrics, recent activity, AI chat, persisted light/dark themes, animated notifications,
+  loading skeletons, error recovery, and mobile drawer behavior.
+- Frontend Vitest and Testing Library coverage for dashboard rendering, navigation, status,
+  chat, theme preference, loading and error states, and notifications.
+- Production review removed dashboard fixtures and simulated chat responses, modularized frontend
+  styles, expanded accessibility and hook coverage, and optimized social metadata.
 - Phase 2 governance models, Alembic migration, layered REST APIs, policy evaluation, spend limits,
   immutable audit history, emergency controls, JWT authentication, RBAC, and tests.
 - Hardened Phase 2 with cumulative spend evaluation, deterministic policy conflict resolution,
