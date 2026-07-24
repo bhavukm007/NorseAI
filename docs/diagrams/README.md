@@ -1,0 +1,1 @@
+Place Mermaid diagrams or exported PNGs here.
