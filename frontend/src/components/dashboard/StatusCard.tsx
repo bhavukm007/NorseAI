@@ -7,7 +7,6 @@ export interface StatusCardProps {
   detail: string;
   tone?: "positive" | "warning" | "neutral" | "accent";
   loading?: boolean;
-  unavailable?: boolean;
 }
 
 export function StatusCard({
@@ -17,7 +16,6 @@ export function StatusCard({
   detail,
   tone = "neutral",
   loading,
-  unavailable,
 }: StatusCardProps) {
   if (loading) {
     return (
@@ -31,7 +29,7 @@ export function StatusCard({
   }
 
   return (
-    <article className={`metric-card tone-${tone} ${unavailable ? "is-unavailable" : ""}`}>
+    <article className={`metric-card tone-${tone}`}>
       <div className="metric-card-top">
         <span className="metric-icon">
           <Icon size={19} />
@@ -40,7 +38,6 @@ export function StatusCard({
       <span className="metric-title">{title}</span>
       <strong className="metric-value">{value}</strong>
       <span className="metric-detail">{detail}</span>
-      {unavailable && <span className="placeholder-badge">Not connected</span>}
     </article>
   );
 }

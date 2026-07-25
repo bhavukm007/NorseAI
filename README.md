@@ -1,77 +1,90 @@
 # NorseAI
 
-NorseAI is an enterprise AI governance platform for registering autonomous agents, enforcing
-policy and spend controls, evaluating AI-system risk, and producing audit-ready compliance
-reports.
+NorseAI is a production-oriented governance platform for autonomous financial agents. Every
+payment, transfer, or refund passes through policy evaluation, hierarchical budget enforcement,
+fleet and organization status checks, idempotent execution, and an immutable audit trail before a
+sandbox adapter can settle it.
 
-## The problem
+The authenticated Operator Governance Platform is the primary experience. A separate AI
+Assessment Lab demonstrates deterministic risk and compliance analysis for high-impact AI systems.
 
-Organizations adopting autonomous and high-impact AI need a consistent way to understand what
-systems do, which rules apply, how risk is controlled, and who approved deployment. Evidence is
-often distributed across spreadsheets, policy documents, and operational tools, making reviews
-slow and difficult to audit.
+## What the platform demonstrates
 
-## The solution
+1. **Financial Agent** — register agents and assign them to governed fleets.
+2. **Governance Decision** — apply deterministic allow, deny, and conditional policies.
+3. **Budget Enforcement** — enforce transaction, daily, and monthly limits at agent, fleet, and
+   organization scope.
+4. **Fleet Governance** — group agents under organization-owned fleets and control fleet status.
+5. **Emergency Stop** — disable or suspend agents and stop an entire fleet immediately.
+6. **Audit Trail** — retain append-only decisions with actor, request, correlation, policy, budget,
+   and execution context; export evidence as CSV or JSONL.
+7. **Operator Dashboard** — monitor active agents, fleets, budget utilization, emergency state,
+   recent actions, and audit events.
+8. **AI Assessment Lab** — run deterministic AI risk assessments and export executive reports as
+   PDF, JSON, or CSV.
 
-NorseAI combines a secure governance API with a polished assessment workspace. Teams can manage
-agents and policies through authenticated APIs, then demonstrate the complete governance journey
-in the AI Governance Simulator—from system submission and rule evaluation through risk scoring,
-remediation, and an executive decision report.
+## Governance workflow
 
-## Product capabilities
+```mermaid
+flowchart LR
+    OP["Authenticated operator"] --> REQ["Financial action request"]
+    REQ --> STATUS["Agent, fleet, and organization status"]
+    STATUS --> POLICY["Deterministic policy decision"]
+    POLICY --> BUDGET["Hierarchical budget reservation"]
+    BUDGET --> ADAPTER["Sandbox financial adapter"]
+    ADAPTER --> LEDGER["Settlement or compensating reversal"]
+    STATUS --> AUDIT["Immutable audit event"]
+    POLICY --> AUDIT
+    BUDGET --> AUDIT
+    ADAPTER --> AUDIT
+```
 
-- Validated AI-system intake with six enterprise demo scenarios
-- Animated eight-stage governance assessment pipeline
-- Privacy, security, fairness, transparency, accountability, and regulatory risk analysis
-- Governance rule findings with passed, warning, and failed states
-- Compliance KPIs and accessible animated data visualizations
-- Prioritized, actionable remediation recommendations
-- Executive report generation with PDF, JSON, and CSV exports
-- Browser-local assessment history with reopen, comparison, and deletion
-- One-click judge demo that completes in seconds
-- Responsive light and dark themes with keyboard and screen-reader support
-- Authenticated agent, policy, permission, spend-control, emergency-action, and audit APIs
+The server is the enforcement boundary. Preview endpoints can evaluate permission and spend rules,
+but only `POST /api/v1/financial-actions` invokes the financial adapter.
 
 ## Architecture
 
 ```mermaid
-flowchart LR
-    UI["React governance workspace"] --> API["FastAPI /api/v1"]
-    UI --> LS["Browser-local assessment history"]
-    API --> GOV["Governance services"]
-    GOV --> DB["PostgreSQL"]
-    GOV --> AUDIT["Immutable audit trail"]
-    API -. future adapters .-> REDIS["Redis"]
-    API -. policy integration .-> OPA["Open Policy Agent"]
+flowchart TB
+    WEB["React 19 operator workspace"] --> API["FastAPI /api/v1"]
+    WEB --> LAB["Browser-local AI Assessment Lab"]
+    API --> AUTH["Persistent users and revocable sessions"]
+    API --> SERVICES["Governance services"]
+    SERVICES --> DB["PostgreSQL + Alembic"]
+    SERVICES --> SANDBOX["Sandbox financial adapter"]
+    SERVICES --> AUDIT["Append-only audit trail"]
+    COMPOSE["Docker Compose"] --> API
+    COMPOSE --> WEB
+    COMPOSE --> DB
+    COMPOSE --> REDIS["Redis provisioned"]
+    COMPOSE --> OPA["OPA provisioned"]
 ```
 
-The public simulator uses deterministic client-side assessment logic for a reliable hackathon
-demonstration. Authenticated operational governance remains behind the FastAPI authorization
-boundary and is not duplicated or bypassed by the simulator.
+Redis and OPA are provisioned in Compose but are not in the current decision execution path.
+Policies are evaluated by the deterministic application service. The Assessment Lab is isolated
+from operational financial records and uses validated browser-local storage.
 
-## Technology stack
+## Technology
 
-| Layer | Technology |
+| Layer | Implementation |
 | --- | --- |
-| Frontend | React 19, TypeScript, Vite, React Router |
-| Forms and state | React Hook Form, Zod, TanStack Query |
-| UI and motion | Lucide, Framer Motion, responsive CSS design system |
-| Visualization | Recharts |
-| Report export | jsPDF, native JSON and CSV generation |
-| Backend | FastAPI, Pydantic, SQLAlchemy |
+| Operator UI | React 19, TypeScript, Vite, React Router, TanStack Query |
+| Assessment Lab | React Hook Form, Zod, Recharts, jsPDF |
+| API | FastAPI, Pydantic, SQLAlchemy |
 | Persistence | PostgreSQL, Alembic |
-| Security | JWT claims, role-based access control, deterministic policy precedence |
-| Quality | Pytest, Vitest, Testing Library, ESLint, Prettier, Ruff, Black |
+| Security | JWT access tokens, rotating refresh sessions, scrypt hashes, RBAC, rate limiting |
+| Delivery | Docker, Nginx, Docker Compose, GitHub Actions |
+| Quality | Pytest, Vitest, Testing Library, Ruff, Black, ESLint, Prettier |
 
-## Run locally
+## Local setup
 
-Requirements: Python 3.11+, Node.js 20+, and PostgreSQL for persistent governance APIs.
+Requirements: Python 3.11+, Node.js 20+, and PostgreSQL.
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements-dev.txt
-copy .env.example .env
+Copy-Item .env.example .env
 python -m alembic upgrade head
 uvicorn backend.app.main:app --reload
 ```
@@ -79,97 +92,113 @@ uvicorn backend.app.main:app --reload
 In a second terminal:
 
 ```powershell
-cd frontend
+Set-Location frontend
 npm ci
 npm run dev
 ```
 
-Open `http://localhost:5173`. API documentation is available at `http://localhost:8000/docs` in
-development. A full container stack can be started with `docker compose up --build`; the web
-application is then served at `http://localhost:3000`.
+Open `http://localhost:5173` and sign in with `APP_OPERATOR_USERNAME` and
+`APP_OPERATOR_PASSWORD`. Development API documentation is available at
+`http://localhost:8000/docs`.
 
-Never use the example JWT or database secrets outside local development. Set a random
-`APP_JWT_SECRET` of at least 32 bytes, restrict `APP_CORS_ORIGINS`, disable API documentation, and
-use managed database credentials for staging or production.
+The bootstrap operator is created only when that username does not already exist. Passwords are
+stored as scrypt hashes, not plaintext.
+
+## Container setup
+
+Compose uses production defaults and requires explicit secrets:
+
+```powershell
+$env:JWT_SECRET = "<random value of at least 32 characters>"
+$env:OPERATOR_PASSWORD = "<strong operator password>"
+$env:POSTGRES_PASSWORD = "<strong database password>"
+docker compose up --build
+```
+
+Open `http://localhost:3000`. The backend runs migrations before starting. For local-only
+development, set `APP_ENVIRONMENT=development` and `APP_DOCS_ENABLED=true` explicitly.
+
+See [configuration and security architecture](docs/architecture/security-architecture.md) for the
+complete environment variable reference.
 
 ## API overview
 
-All governance routes are versioned below `/api/v1`. The health endpoint is public. Governance
-resources require a signed bearer token with issuer, audience, lifetime, subject, username, and
-role claims.
+All application endpoints are below `/api/v1`.
 
 | Area | Representative endpoints |
 | --- | --- |
 | Health | `GET /health` |
-| Agents | `POST /agents`, `GET /agents`, `PATCH /agents/{id}` |
-| Policies | `POST /policies`, `GET /policies`, `PATCH /policies/{id}` |
-| Decisions | `POST /permissions/evaluate`, `POST /spend/evaluate` |
-| Emergency control | `POST /agents/{id}/disable`, `/suspend`, `/enable` |
-| Audit | `GET /audit-logs` |
+| Authentication | `POST /auth/login`, `/auth/refresh`, `/auth/logout`; `GET /auth/me` |
+| Agents and policies | CRUD under `/agents` and `/policies`; assignments under `/permissions` |
+| Organizations and fleets | `/organizations`, `/fleets`, fleet status and emergency actions |
+| Budgets | `/spend-limits`, `/fleet-spend-limits`, `/organization-spend-limits` |
+| Financial execution | `POST /financial-actions`, list actions, reverse a settled action |
+| Audit | Filter `/audit-logs`; export `/audit-logs/export?format=csv|jsonl` |
+| Dashboard | `GET /overview` |
 
-See [API design](docs/api/api-design.md) and the interactive development documentation for the
-complete schemas and role matrix.
+See [API design](docs/api/api-design.md) for endpoints, authorization, errors, and decision
+semantics.
 
-## Project structure
+## Judge-friendly walkthrough
 
-```text
-backend/app/              FastAPI application, schemas, repositories, and services
-frontend/src/app/         Routing and application composition
-frontend/src/components/  Reusable layout, dashboard, chat, and feedback components
-frontend/src/features/    Dashboard and governance simulator feature modules
-frontend/src/styles/      Design tokens and responsive component styles
-tests/                    Backend API, security, and integration tests
-docs/                     Architecture, design, phase, and submission documentation
-migrations/               Alembic database migrations
-```
+Prepare one organization, fleet, enabled financial agent, allow policy, permission assignment, and
+budget at each scope.
 
-## Judge demo
+1. **Sign in** and open **Overview** to establish the live control plane.
+2. **Agents** — show the financial agent and its fleet assignment.
+3. **Policies** — explain deterministic precedence and default denial.
+4. **Budgets** — show agent, fleet, and organization limits.
+5. Submit a governed action through the API and return to **Overview** to show the settled result.
+6. **Emergency** — stop the fleet; demonstrate that later actions are rejected before execution.
+7. **Audit Center** — filter the decision trail and export CSV or JSONL evidence.
+8. **AI Assessment Lab** — run the one-click assessment and export the executive report.
 
-1. Open the dashboard in either theme.
-2. Select **Run judge demo**.
-3. The Healthcare Diagnostic AI submission loads automatically.
-4. Follow the animated governance pipeline to the completed risk and compliance dashboard.
-5. Open the executive report and export it as PDF.
-6. Return to assessment history to demonstrate persistence and comparison.
+The recommended narration is in [the demo script](docs/submission/demo-script.md).
 
-The complete automated flow takes well under one minute and does not depend on network access.
-See the [demo script](docs/submission/demo-script.md) for the recommended narration.
-
-## Quality checks
+## Validation
 
 ```powershell
 .\.venv\Scripts\python.exe -m ruff check backend tests migrations
 .\.venv\Scripts\python.exe -m black --check backend tests migrations
 .\.venv\Scripts\python.exe -m pytest
-cd frontend
+.\.venv\Scripts\python.exe -m alembic upgrade head --sql
+
+Set-Location frontend
 npm run lint
 npm run format:check
-npm run test
+npm test
 npm run build
+npm audit --audit-level=critical
 ```
 
-The optional PostgreSQL integration test requires `POSTGRES_TEST_DATABASE_URL`.
+Set `POSTGRES_TEST_DATABASE_URL` to run the PostgreSQL-marked integration test. CI also performs
+Python dependency auditing, Bandit scanning, Compose validation, container builds, migration SQL
+generation, and a PostgreSQL service test.
 
 ## Screenshots
 
-Capture the final submission images at:
+No product screenshots are committed. `frontend/public/og.jpg` is the social preview image, not a
+UI screenshot. For submission, capture:
 
-- Dashboard overview in light mode
-- Automated governance pipeline
-- Risk and compliance dashboard in dark mode
-- Executive decision report
+- Operator Overview with live governance metrics
+- Agents, fleets, policies, and hierarchical budgets
+- Emergency fleet stop
+- Audit Center with a governed financial decision
+- AI Assessment Lab results and executive report
 
-The repository includes a social preview at `frontend/public/og.jpg`.
+## Repository map
 
-## Roadmap
+```text
+backend/app/              API, models, repositories, services, security, adapter
+frontend/src/features/    Authentication, operator governance, dashboard, assessment lab
+migrations/               Ordered PostgreSQL schema migrations
+tests/                    Backend unit, API, security, and PostgreSQL integration tests
+docs/                     Architecture, API, database, phase, design, and submission material
+.github/workflows/ci.yml  Security, quality, build, migration, and integration gates
+```
 
-- Persist simulator assessments through authenticated organization workspaces
-- Add regulation-specific control packs and evidence attachments
-- Connect live OPA decisions and portfolio analytics
-- Add signed report attestations and scheduled reassessments
-- Extend notification and collaboration integrations
+## Scope boundary
 
-## Team
-
-Built by the NorseAI team for the AI governance hackathon. Add final contributor names and contact
-details here before public submission if required by the event.
+Financial execution is intentionally sandboxed. NorseAI does not connect to a bank, payment
+processor, production OPA policy bundle, or distributed Redis rate limiter. These boundaries are
+documented rather than represented as implemented integrations.

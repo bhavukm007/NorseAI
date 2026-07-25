@@ -8,13 +8,23 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from backend.app.api.router import api_router
 from backend.app.core.config import Settings, get_settings
 from backend.app.core.logging import configure_logging, get_logger
+from backend.app.core.security import (
+    RateLimiter,
+    client_key,
+    correlation_id_context,
+    hash_password,
+    request_id_context,
+    valid_request_identifier,
+)
 from backend.app.db import Base, build_session_factory
 from backend.app.errors import AppError
+from backend.app.models import Role, User
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -23,11 +33,33 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     configure_logging(resolved_settings.log_level)
     logger = get_logger(__name__)
     session_factory = build_session_factory(resolved_settings.database_url)
+    rate_limiter = RateLimiter()
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         if resolved_settings.environment == "test":
             Base.metadata.create_all(session_factory.kw["bind"])
+        with session_factory() as session:
+            operator = session.scalar(
+                select(User).where(User.username == resolved_settings.operator_username)
+            )
+            if operator is None:
+                session.add(
+                    User(
+                        username=resolved_settings.operator_username,
+                        role=Role.ADMIN,
+                        password_hash=hash_password(
+                            resolved_settings.operator_password.get_secret_value()
+                        ),
+                    )
+                )
+                session.commit()
+            elif not operator.password_hash:
+                operator.password_hash = hash_password(
+                    resolved_settings.operator_password.get_secret_value()
+                )
+                operator.enabled = True
+                session.commit()
         logger.info(
             "application_started",
             extra={
@@ -53,6 +85,62 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     application.state.settings = resolved_settings
     application.state.session_factory = session_factory
+
+    @application.middleware("http")
+    async def security_controls(request: Request, call_next):
+        request_id = valid_request_identifier(request.headers.get("x-request-id"))
+        correlation_id = valid_request_identifier(request.headers.get("x-correlation-id"))
+        request_token = request_id_context.set(request_id)
+        correlation_token = correlation_id_context.set(correlation_id)
+        path = request.url.path
+        limit = None
+        if path.endswith("/auth/login"):
+            limit = resolved_settings.login_rate_limit
+        elif "/auth/" in path:
+            limit = resolved_settings.auth_rate_limit
+        elif path.endswith("/audit-logs/export"):
+            limit = resolved_settings.audit_export_rate_limit
+        elif path.endswith("/financial-actions") or "/financial-actions/" in path:
+            limit = resolved_settings.financial_rate_limit
+        if limit is not None:
+            allowed, retry_after = rate_limiter.allow(
+                f"{client_key(request)}:{path}",
+                limit,
+                resolved_settings.rate_limit_window_seconds,
+            )
+            if not allowed:
+                response = JSONResponse(
+                    status_code=429,
+                    content={
+                        "error": {
+                            "code": "rate_limit_exceeded",
+                            "message": "Too many requests",
+                        }
+                    },
+                    headers={"Retry-After": str(retry_after)},
+                )
+            else:
+                response = await call_next(request)
+        else:
+            response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        response.headers["X-Correlation-ID"] = correlation_id
+        response.headers["Content-Security-Policy"] = resolved_settings.csp_policy
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        if resolved_settings.hsts_max_age and resolved_settings.environment in {
+            "test",
+            "staging",
+            "production",
+        }:
+            response.headers["Strict-Transport-Security"] = (
+                f"max-age={resolved_settings.hsts_max_age}; includeSubDomains"
+            )
+        request_id_context.reset(request_token)
+        correlation_id_context.reset(correlation_token)
+        return response
 
     @application.exception_handler(AppError)
     async def handle_app_error(_: Request, error: AppError) -> JSONResponse:

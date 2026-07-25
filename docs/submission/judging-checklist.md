@@ -1,35 +1,32 @@
 # Final judging checklist
 
-## Before presenting
+## Environment
 
-- [ ] Copy `.env.example` to `.env` and use development-only local values.
-- [ ] Start FastAPI and confirm `/api/v1/health` reports healthy.
-- [ ] Start the frontend and open the dashboard.
-- [ ] Complete one assessment so history and comparison have representative data.
-- [ ] Verify PDF, JSON, and CSV downloads in the presentation browser.
-- [ ] Verify light and dark themes.
-- [ ] Keep the presentation viewport at 1280px wide or larger.
-- [ ] Close unrelated tabs and disable distracting system notifications.
+- [ ] Copy `.env.example` to `.env` and set a 32+ character JWT secret and strong operator/database
+      passwords.
+- [ ] Apply `python -m alembic upgrade head`.
+- [ ] Confirm `GET /api/v1/health` and operator sign-in.
+- [ ] Start the frontend and open `/dashboard`.
+- [ ] Seed or create an organization, fleet, agent, policy assignment, and limits.
 
 ## Product walkthrough
 
-- [ ] Dashboard loads without layout shift.
-- [ ] One-click demo launches from the dashboard.
-- [ ] All eight assessment stages complete.
-- [ ] Risk, compliance, and five visualization views render.
-- [ ] Governance rule statuses and priority recommendations are readable.
-- [ ] Executive report opens and exports.
-- [ ] History persists after reload, comparison works, and deletion is confirmed by removal.
-- [ ] Keyboard focus is visible and the skip link reaches main content.
-- [ ] Mobile navigation opens, closes with Escape, and restores focus.
-- [ ] Offline backend state offers a retry action without blocking the simulator.
+- [ ] Overview shows live governance data.
+- [ ] Financial agent, fleet, policy, and hierarchical budgets are visible.
+- [ ] Governed sandbox action settles and appears in recent decisions.
+- [ ] Idempotent replay does not duplicate execution or spend.
+- [ ] Fleet emergency stop prevents execution.
+- [ ] Audit event is filterable and exports as CSV and JSONL.
+- [ ] AI Assessment Lab completes and exports an executive report.
+- [ ] Light/dark themes, keyboard focus, and responsive navigation work.
 
 ## Release gates
 
-- [ ] Frontend production build passes.
-- [ ] Frontend tests and ESLint pass.
-- [ ] Backend tests, Ruff, and Black checks pass.
+- [ ] Backend Ruff, Black, tests, migration SQL, and dependency audit pass.
+- [ ] Frontend ESLint, Prettier, tests, production build, and critical dependency audit pass.
+- [ ] PostgreSQL integration passes when `POSTGRES_TEST_DATABASE_URL` is configured.
+- [ ] `docker compose config --quiet` passes with required secrets.
 - [ ] `git diff --check` is clean.
-- [ ] No secrets, debug output, generated builds, or temporary test directories are committed.
-- [ ] README installation and demo steps match the final product.
-- [ ] Current Phase 05 commit is pushed to the submission branch.
+- [ ] No secrets, build output, caches, screenshots falsely presented as product UI, or temporary
+      test directories are committed.
+- [ ] README and submission narration match the current product.

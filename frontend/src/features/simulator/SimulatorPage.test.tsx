@@ -8,7 +8,7 @@ import { SimulatorPage } from "./SimulatorPage";
 describe("SimulatorPage", () => {
   beforeEach(() => localStorage.clear());
 
-  const renderSimulator = (path = "/simulator") =>
+  const renderSimulator = (path = "/assessment-lab") =>
     render(
       <MemoryRouter initialEntries={[path]}>
         <SimulatorPage />

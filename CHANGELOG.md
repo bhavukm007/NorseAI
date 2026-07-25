@@ -1,50 +1,52 @@
 # Changelog
 
-## Phase 05
+## Phase 09 — Submission readiness
 
-- Added one-click judge demo mode and a polished dashboard launch experience.
-- Added global crash recovery, accessible loading states, skip navigation, chart descriptions, and
-  export progress feedback.
-- Hardened browser-local assessment storage with runtime validation and bounded retention.
-- Improved reserved-route content, responsive states, bundle loading, and submission documentation.
-- Completed final configuration, security, performance, accessibility, and quality review.
+- Reconciled all product, API, architecture, database, security, design, phase, and submission
+  documentation with the completed Financial Governance Platform.
+- Removed obsolete placeholder UI artifacts and corrected repository-wide encoding.
+- Completed final format, lint, test, build, migration, dependency, and Compose validation.
 
-## Phase 04
+## Phase 08 — Security hardening
 
-- Added the interactive AI Governance Simulator with six auto-filled assessment scenarios.
-- Added animated governance processing, risk scoring, compliance KPIs, rule evaluation, and
-  prioritized recommendations.
-- Added Recharts radar, donut, severity, category, and assessment-trend visualizations.
-- Added persistent local assessment history with report reopening, comparison, and deletion.
-- Added professional executive reports with PDF, JSON, and CSV exports.
+- Added persistent authentication, scrypt password hashes, rotating revocable sessions, user
+  disablement, security headers, configurable rate limits, and hardened audit context.
+- Added production secret validation, patched dependencies, security scanning, migration
+  validation, PostgreSQL CI, and production build checks.
 
-All notable changes to NorseAI are documented here.
+## Phase 07 — Operator Governance Platform
 
-## [Unreleased]
+- Made the authenticated operator workspace the primary UI.
+- Added live Overview, Agents, Fleets, Policies, Budgets, Audit Center, and Emergency pages.
 
-### Added
+## Phase 06 — Financial Governance Core
 
-- Phase 3 premium operator dashboard with responsive navigation, system status cards, health
-  polling, metrics, recent activity, AI chat, persisted light/dark themes, animated notifications,
-  loading skeletons, error recovery, and mobile drawer behavior.
-- Frontend Vitest and Testing Library coverage for dashboard rendering, navigation, status,
-  chat, theme preference, loading and error states, and notifications.
-- Production review removed dashboard fixtures and simulated chat responses, modularized frontend
-  styles, expanded accessibility and hook coverage, and optimized social metadata.
-- Phase 2 governance models, Alembic migration, layered REST APIs, policy evaluation, spend limits,
-  immutable audit history, emergency controls, JWT authentication, RBAC, and tests.
-- Hardened Phase 2 with cumulative spend evaluation, deterministic policy conflict resolution,
-  required JWT claims and issuer/audience validation, database audit immutability triggers,
-  complete ORM relationships, query indexes, pagination, stable errors, and PostgreSQL integration
+- Added organizations, fleets, hierarchical budgets, mandatory governed financial execution,
+  idempotency, reservations, settlements, reversals, and complete audit evidence.
+
+## Phase 05 — Assessment resilience
+
+- Added one-click Assessment Lab demonstration, crash recovery, accessible loading and
+  navigation, bounded history validation, lazy report generation, and responsive polish.
+
+## Phase 04 — AI Assessment Lab
+
+- Added six deterministic assessment scenarios, an eight-stage governance pipeline, risk and
+  compliance visualizations, remediation, browser-local history, comparison, and PDF/JSON/CSV
+  exports.
+
+## Phase 03 — Dashboard foundation
+
+- Added the responsive application shell, health polling, theme and toast providers, loading and
+  error states, accessibility, and frontend testing.
+
+## Phase 02 — Governance Engine
+
+- Added normalized governance models, Alembic migrations, policy and spend evaluation, emergency
+  controls, RBAC, immutable audit, deterministic conflict resolution, and PostgreSQL integration
   coverage.
-- Phase 1 modular FastAPI foundation with versioned health API, typed settings, structured logging,
-  CORS, dependency injection boundary, and tests.
-- React, TypeScript, and Vite application shell with routing, responsive layout, sidebar,
-  dashboard placeholder, not-found page, and typed API client.
-- Backend and frontend Dockerfiles plus Compose services for PostgreSQL, Redis, and OPA.
-- Ruff, Black, pytest, ESLint, Prettier, EditorConfig, pre-commit, and GitHub Actions CI.
-- Local development, validation, environment, and scope documentation.
 
-## v0.1.0
+## Phase 01 — Foundation
 
-- Repository initialized.
+- Added the modular FastAPI API, typed configuration, structured logging, React/Vite shell,
+  Dockerfiles, Compose stack, quality tooling, and CI.

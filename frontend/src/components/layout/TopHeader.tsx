@@ -1,5 +1,6 @@
-import { Bell, Menu, Moon, RefreshCw, Sun } from "lucide-react";
+import { LogOut, Menu, Moon, RefreshCw, Sun } from "lucide-react";
 
+import { useAuth } from "../../features/auth/auth";
 import { useTheme } from "../../providers/theme";
 import { useToast } from "../../providers/toast";
 
@@ -11,6 +12,7 @@ interface TopHeaderProps {
 export function TopHeader({ mobileOpen, onMenu }: TopHeaderProps) {
   const { theme, toggleTheme } = useTheme();
   const { notify } = useToast();
+  const { session, logout } = useAuth();
 
   const handleRefresh = () => {
     window.dispatchEvent(new Event("norse:refresh"));
@@ -46,30 +48,19 @@ export function TopHeader({ mobileOpen, onMenu }: TopHeaderProps) {
         <button className="icon-button" onClick={handleRefresh} aria-label="Refresh dashboard">
           <RefreshCw size={18} />
         </button>
-        <button
-          className="icon-button"
-          onClick={() =>
-            notify({
-              title: "Notifications unavailable",
-              message: "A notification API has not been connected.",
-              type: "info",
-            })
-          }
-          aria-label="Notifications"
-        >
-          <Bell size={18} />
-          <span className="notification-dot" />
-        </button>
         <button className="icon-button" onClick={toggleTheme} aria-label="Toggle theme">
           {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
         </button>
         <div className="session-indicator" title="Current session">
-          <span className="avatar">LS</span>
+          <span className="avatar">{session?.username.slice(0, 2).toUpperCase()}</span>
           <div>
-            <strong>Local session</strong>
-            <span>Unauthenticated</span>
+            <strong>{session?.username}</strong>
+            <span>{session?.role}</span>
           </div>
         </div>
+        <button className="icon-button" onClick={logout} aria-label="Log out">
+          <LogOut size={18} />
+        </button>
       </div>
     </header>
   );

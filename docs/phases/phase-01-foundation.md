@@ -9,7 +9,7 @@ Establish a production-quality, deployable project foundation with no governance
 - Modular FastAPI application under `/api/v1`.
 - Typed Pydantic environment settings, JSON logging, dependency injection foundation, CORS, and
   liveness endpoint.
-- React/TypeScript/Vite shell with routing, responsive layout, sidebar, placeholder page, and typed
+- React/TypeScript/Vite shell with routing, responsive layout, sidebar, initial routes, and typed
   API client.
 - Container images and Compose orchestration for frontend, backend, PostgreSQL, Redis, and OPA.
 - Python and frontend linting, formatting, tests, builds, pre-commit, and CI automation.

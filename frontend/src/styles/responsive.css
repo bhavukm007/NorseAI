@@ -2,14 +2,6 @@
   .status-grid {
     grid-template-columns: repeat(3, 1fr);
   }
-
-  .dashboard-columns {
-    grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.75fr);
-  }
-
-  .primary-column {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 960px) {
@@ -68,14 +60,6 @@
     background: rgb(4 10 11 / 58%);
     backdrop-filter: blur(2px);
   }
-
-  .dashboard-columns {
-    grid-template-columns: 1fr;
-  }
-
-  .primary-column {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 700px) {
@@ -97,22 +81,8 @@
     padding-top: 24px;
   }
 
-  .dashboard-intro {
-    align-items: flex-start;
-    flex-direction: column;
-    margin-bottom: 22px;
-  }
-
-  .demo-launch-button {
-    width: 100%;
-  }
-
   .status-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .primary-column {
-    grid-template-columns: 1fr;
   }
 
   .metric-card {

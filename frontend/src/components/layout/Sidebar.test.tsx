@@ -15,13 +15,13 @@ describe("Sidebar navigation", () => {
   it("navigates and exposes the active route with aria-current", async () => {
     const user = userEvent.setup();
     const { router } = renderApp();
-    const chatLink = screen.getByRole("link", { name: "Chat" });
+    const agentsLink = screen.getByRole("link", { name: "Agents" });
 
-    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
-    await user.click(chatLink);
+    expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
+    await user.click(agentsLink);
 
-    expect(router.state.location.pathname).toBe("/chat");
-    expect(chatLink).toHaveAttribute("aria-current", "page");
+    expect(router.state.location.pathname).toBe("/agents");
+    expect(agentsLink).toHaveAttribute("aria-current", "page");
   });
 
   it("opens the mobile drawer and closes it with Escape", async () => {

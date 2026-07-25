@@ -127,4 +127,5 @@ class SpendService(Service):
             f"spend/{data.currency}/{data.amount}",
             result="allowed" if result.allowed else "denied",
             agent_id=data.agent_id,
+            decision_context=data.model_dump(mode="json"),
         )

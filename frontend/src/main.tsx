@@ -7,6 +7,7 @@ import { router } from "./app/router";
 import { ErrorBoundary } from "./components/feedback/ErrorBoundary";
 import { ThemeProvider } from "./providers/ThemeProvider";
 import { ToastProvider } from "./providers/ToastProvider";
+import { AuthProvider } from "./features/auth/AuthProvider";
 import "./styles/global.css";
 
 const root = document.getElementById("root");
@@ -21,13 +22,15 @@ const queryClient = new QueryClient({
 createRoot(root).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <ErrorBoundary>
-        <ThemeProvider>
-          <ToastProvider>
-            <RouterProvider router={router} />
-          </ToastProvider>
-        </ThemeProvider>
-      </ErrorBoundary>
+      <AuthProvider>
+        <ErrorBoundary>
+          <ThemeProvider>
+            <ToastProvider>
+              <RouterProvider router={router} />
+            </ToastProvider>
+          </ThemeProvider>
+        </ErrorBoundary>
+      </AuthProvider>
     </QueryClientProvider>
   </StrictMode>,
 );

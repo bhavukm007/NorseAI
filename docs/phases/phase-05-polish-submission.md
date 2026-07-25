@@ -1,20 +1,14 @@
-# Phase 05 — Production readiness and submission
-
-Phase 05 hardens the Phase 04 product without changing its API contracts.
+# Phase 05: Assessment resilience and submission polish
 
 ## Delivered
 
-- One-click, sub-minute judge demo launched from the dashboard or simulator
-- Global UI recovery boundary with local-data-safe reload action
-- Route-level simulator loading skeleton and lazy PDF generation
-- Validated, bounded browser-local history with graceful storage failure handling
-- Accessible skip navigation, focus states, progress announcements, and chart summaries
-- Responsive judge-demo, recovery, report, and reserved-module states
-- Updated product, architecture, installation, demo, and release documentation
-- Final build, frontend test, backend test, lint, formatting, and security review
+- One-click, sub-minute Assessment Lab demonstration.
+- Global UI recovery boundary with a local-data-safe reload action.
+- Route-level loading and lazy PDF generation.
+- Validated, bounded browser-local history with graceful storage failure handling.
+- Accessible skip navigation, focus states, progress announcements, and chart summaries.
+- Responsive assessment, recovery, report, and workspace states.
+- Frontend test, lint, formatting, build, accessibility, and security review.
 
-## Deployment notes
-
-The Vite frontend and FastAPI backend remain container-ready through the existing Dockerfiles and
-Compose stack. Production operators must provide secure JWT and database credentials, narrow CORS
-origins, and disable API documentation as appropriate for the environment.
+This phase predates the Financial Governance Core. Current architecture and deployment guidance
+are maintained in the repository README and architecture documentation.

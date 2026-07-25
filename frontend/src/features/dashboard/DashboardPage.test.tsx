@@ -1,63 +1,57 @@
-import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { renderApp } from "../../test/renderApp";
 
-const healthResponse = {
-  status: "healthy",
-  service: "NorseAI",
-  version: "0.1.0",
-  environment: "test",
+const overview = {
+  active_agents: 4,
+  active_fleets: 2,
+  active_policies: 3,
+  emergency_fleets: 0,
+  budget_limit: "1000.00",
+  settled_spend: "250.00",
+  reserved_spend: "0.00",
+  recent_decisions: [],
+  recent_audits: [],
 };
 
 describe("DashboardPage", () => {
   beforeEach(() => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(healthResponse),
+      vi.fn((input: RequestInfo | URL) => {
+        const url = String(input);
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve(
+              url.includes("/overview")
+                ? overview
+                : { status: "healthy", service: "NorseAI", version: "0.1.0" },
+            ),
+        });
       }),
     );
   });
 
-  it("renders live backend status and clearly marked unavailable cards", async () => {
+  it("renders live operator governance metrics", async () => {
     renderApp();
 
-    expect(screen.getByRole("heading", { name: "Operations overview" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Operator control center" })).toBeInTheDocument();
     expect(await screen.findByText("Connected")).toBeInTheDocument();
-    expect(screen.getAllByText("Not connected")).toHaveLength(3);
-    expect(screen.getByText("Ready")).toBeInTheDocument();
-    expect(screen.getByText("AI chat is not connected")).toBeInTheDocument();
+    expect(screen.getByText("4")).toBeInTheDocument();
+    expect(screen.getByText("25%")).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /AI Assessment Lab/i })).toHaveLength(2);
   });
 
-  it("renders a skeleton while the health request is pending", () => {
+  it("renders loading status while live requests are pending", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(() => new Promise(() => undefined)),
     );
     renderApp();
 
-    expect(screen.getByRole("article", { name: "Backend status loading" })).toBeInTheDocument();
-  });
-
-  it("renders an actionable error and retries health polling", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockRejectedValueOnce(new Error("offline"))
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(healthResponse),
-      });
-    vi.stubGlobal("fetch", fetchMock);
-    const user = userEvent.setup();
-    renderApp();
-
-    expect(await screen.findByRole("alert")).toHaveTextContent("Backend connection unavailable");
-    await user.click(screen.getByRole("button", { name: /retry/i }));
-
-    await waitFor(() => expect(screen.getByText("Connected")).toBeInTheDocument());
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole("article", { name: "System health loading" })).toBeInTheDocument();
   });
 });

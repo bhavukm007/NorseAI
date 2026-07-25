@@ -1,5 +1,6 @@
 """Deterministic permission evaluation service."""
 
+import uuid
 from typing import Any
 
 from backend.app.models import AgentStatus, Permission, PolicyEffect
@@ -25,6 +26,21 @@ class PermissionService(Service):
             policy_id=data.policy_id,
         )
         return permission
+
+    def list(self, offset: int, limit: int) -> list[Permission]:
+        return self.repos.permissions.list(offset, limit)
+
+    def unassign(self, permission_id: uuid.UUID) -> None:
+        permission = self.repos.permissions.get(permission_id)
+        if not permission:
+            raise self.not_found("Permission")
+        self.audit.record(
+            "permission.unassign",
+            f"permissions/{permission.id}",
+            agent_id=permission.agent_id,
+            policy_id=permission.policy_id,
+        )
+        self.repos.permissions.delete(permission)
 
     @staticmethod
     def _conditions_match(conditions: dict[str, Any], context: dict[str, Any]) -> bool:
@@ -60,5 +76,11 @@ class PermissionService(Service):
             result="allowed" if result.allowed else "denied",
             agent_id=request.agent_id,
             policy_id=result.enforced_by_policy,
+            decision_context=request.model_dump(mode="json"),
+            policy_version=(
+                str(self.repos.policies.get(result.enforced_by_policy).updated_at)
+                if result.enforced_by_policy
+                else None
+            ),
         )
         return result

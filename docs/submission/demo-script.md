@@ -1,50 +1,51 @@
 # NorseAI judge demo
 
-Target duration: 3–4 minutes.
+Target duration: 4–5 minutes.
 
 ## 1. Frame the problem — 20 seconds
 
-“Organizations are deploying high-impact AI faster than governance teams can review it. NorseAI
-turns fragmented policy checks into one traceable workflow, from intake to an executive decision.”
+“Autonomous financial agents can act faster than a human approval process. NorseAI makes policy,
+budget, fleet status, execution, and evidence one mandatory server-side workflow.”
 
-## 2. Show operational readiness — 25 seconds
+## 2. Establish the control plane — 30 seconds
 
-Open the dashboard. Point out the live FastAPI health state, governance control center, responsive
-navigation, and theme control. Mention that authenticated agent and policy APIs remain isolated
-from the public demonstration.
+Sign in and open **Overview**. Point out live API health, enabled agents and fleets, budget
+utilization, emergency state, recent governed actions, and audit events.
 
-## 3. Run the automated assessment — 45 seconds
+## 3. Show the governed agent — 45 seconds
 
-Select **Run judge demo**. The Healthcare Diagnostic AI is submitted automatically. Narrate the
-eight stages as they complete: metadata, classification, applicable regulation, rule evaluation,
-risk, violations, remediation, and reporting.
+Open **Agents**, **Fleets**, and **Policies**. Explain that the agent belongs to an
+organization-owned fleet and receives deterministic policy assignments. Emphasize default denial
+and deny precedence at equal priority.
 
-## 4. Explain the result — 75 seconds
+## 4. Show budget enforcement — 40 seconds
 
-On the results dashboard:
+Open **Budgets** and show transaction, daily, or monthly limits at agent, fleet, and organization
+scope. Explain that all required scopes reserve budget before execution.
 
-- Explain the overall risk score, confidence, and category bars.
-- Highlight compliance KPIs and the radar, donut, severity, category, and trend charts.
-- Open the rule table and show traceable findings and remediation.
-- Emphasize that the assessment is deterministic and works without a network dependency.
+## 5. Execute and trace a decision — 55 seconds
 
-## 5. Deliver the decision — 45 seconds
+Submit a sandbox financial action through `POST /api/v1/financial-actions`. Return to **Overview**
+to show settlement. Open **Audit Center**, locate the event, and point out actor, request,
+correlation, policy, spend, and execution evidence. Export CSV or JSONL.
 
-Open the executive report. Show the system overview, findings, violations, prioritized
-recommendations, and final decision. Export the PDF, then mention JSON and CSV evidence exports.
+## 6. Demonstrate emergency control — 35 seconds
 
-## 6. Demonstrate continuity — 25 seconds
+Open **Emergency** and stop the fleet. Explain that subsequent actions are rejected before adapter
+invocation. Restore the fleet only if the remaining demo requires it.
 
-Open assessment history. Explain that reports persist locally, can be reopened, compared, or
-deleted, and invalid browser data is safely ignored.
+## 7. Show AI governance breadth — 60 seconds
 
-## Closing — 10 seconds
+Open **AI Assessment Lab** and run the one-click Healthcare Diagnostic AI assessment. Show risk,
+compliance, findings, remediation, and the executive PDF/JSON/CSV exports. Clarify that this
+deterministic browser workspace is separate from financial execution.
 
-“NorseAI gives governance teams a practical control plane today and a clear path to organization-
-wide, evidence-backed AI oversight.”
+## Closing — 15 seconds
 
-## Recovery path
+“NorseAI is both a live financial-agent control plane and an evidence-ready AI governance
+workspace: authorize, constrain, stop, and prove every decision.”
 
-If the backend is unavailable, continue: the dashboard presents a friendly offline state and the
-simulator remains fully functional. If a view fails unexpectedly, use **Reload workspace**; local
-assessment history remains intact.
+## Recovery
+
+If the backend is unavailable, use the Assessment Lab while the operator UI displays an explicit
+offline state. Do not describe Redis, OPA, or external payments as active integrations.

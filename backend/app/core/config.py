@@ -33,6 +33,17 @@ class Settings(BaseSettings):
     jwt_algorithm: Literal["HS256"] = "HS256"
     jwt_issuer: str = "norseai"
     jwt_audience: str = "norseai-api"
+    operator_username: str = "admin"
+    operator_password: SecretStr = SecretStr("norseai-demo")
+    access_token_minutes: int = Field(default=60, ge=5, le=1440)
+    refresh_token_days: int = Field(default=7, ge=1, le=90)
+    login_rate_limit: int = Field(default=10, ge=1, le=1000)
+    auth_rate_limit: int = Field(default=60, ge=1, le=10000)
+    financial_rate_limit: int = Field(default=60, ge=1, le=10000)
+    audit_export_rate_limit: int = Field(default=10, ge=1, le=1000)
+    rate_limit_window_seconds: int = Field(default=60, ge=1, le=3600)
+    hsts_max_age: int = Field(default=31536000, ge=0)
+    csp_policy: str = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
     redis_url: str = "redis://localhost:6379/0"
     opa_url: AnyHttpUrl = AnyHttpUrl("http://localhost:8181")
 
@@ -48,6 +59,11 @@ class Settings(BaseSettings):
                 raise ValueError("APP_JWT_SECRET must contain at least 32 characters")
         if self.environment == "production" and self.debug:
             raise ValueError("APP_DEBUG must be false in production")
+        if (
+            self.environment == "production"
+            and self.operator_password.get_secret_value() == "norseai-demo"
+        ):
+            raise ValueError("APP_OPERATOR_PASSWORD must be changed in production")
         return self
 
 

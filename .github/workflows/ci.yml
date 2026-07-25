@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: ["main", "feature/**"]
+    branches: ["main", "feature/**", "audit/**"]
   pull_request:
     branches: ["main"]
 
@@ -19,8 +19,12 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install --requirement requirements-dev.txt
+      - run: pip install pip-audit bandit
+      - run: pip-audit --requirement requirements.txt
+      - run: bandit -q -r backend -x tests
       - run: python -m ruff check backend tests migrations
       - run: python -m black --check backend tests migrations
+      - run: python -m alembic upgrade head --sql > migration.sql
       - run: python -m pytest --cov=backend --cov-report=term-missing
 
   frontend:
@@ -36,6 +40,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      - run: npm audit --audit-level=critical
       - run: npm run lint
       - run: npm run format:check
       - run: npm test
@@ -43,8 +48,39 @@ jobs:
 
   containers:
     runs-on: ubuntu-latest
+    env:
+      JWT_SECRET: ci-only-jwt-secret-that-is-at-least-32-characters
+      OPERATOR_PASSWORD: ci-only-operator-password
+      POSTGRES_PASSWORD: ci-only-postgres-password
     steps:
       - uses: actions/checkout@v4
       - run: docker compose config --quiet
       - run: docker build --file backend/Dockerfile .
       - run: docker build --file frontend/Dockerfile frontend
+
+  postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: norseai_test
+          POSTGRES_USER: norseai
+          POSTGRES_PASSWORD: test-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U norseai -d norseai_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://norseai:test-only-password@localhost:5432/norseai_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install --requirement requirements-dev.txt
+      - run: python -m pytest -m postgres

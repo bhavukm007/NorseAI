@@ -1,25 +1,27 @@
 import {
-  BarChart3,
   Bot,
+  BotOff,
+  Building2,
   ChevronLeft,
-  Clock3,
+  CircleDollarSign,
+  FileClock,
   Gauge,
   Landmark,
-  MessageSquareText,
-  Settings,
+  Network,
   ShieldCheck,
   X,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const navigation = [
-  { label: "Dashboard", path: "/dashboard", icon: Gauge },
-  { label: "Chat", path: "/chat", icon: MessageSquareText },
-  { label: "Simulator", path: "/simulator", icon: Bot },
-  { label: "Governance", path: "/governance", icon: ShieldCheck },
-  { label: "Analytics", path: "/analytics", icon: BarChart3 },
-  { label: "History", path: "/history", icon: Clock3 },
-  { label: "Settings", path: "/settings", icon: Settings },
+  { label: "Overview", path: "/dashboard", icon: Gauge },
+  { label: "Agents", path: "/agents", icon: Bot },
+  { label: "Fleets", path: "/fleets", icon: Network },
+  { label: "Policies", path: "/policies", icon: ShieldCheck },
+  { label: "Budgets", path: "/budgets", icon: CircleDollarSign },
+  { label: "Audit Center", path: "/audit", icon: FileClock },
+  { label: "Emergency", path: "/emergency", icon: BotOff },
+  { label: "AI Assessment Lab", path: "/assessment-lab", icon: Building2 },
 ];
 
 interface SidebarProps {
@@ -68,8 +70,8 @@ export function Sidebar({ collapsed, mobileOpen, onCollapse, onNavigate }: Sideb
         <div className="workspace-chip">
           <span className="avatar avatar-small">NW</span>
           <div>
-            <strong>Local workspace</strong>
-            <span>Session unavailable</span>
+            <strong>Operator workspace</strong>
+            <span>Authenticated session</span>
           </div>
         </div>
         <button className="collapse-button" onClick={onCollapse} aria-label="Collapse sidebar">
