@@ -67,8 +67,13 @@ export interface FinancialAction {
   currency: string;
   status: "rejected" | "settled" | "reversed";
   allowed: boolean;
+  permission_allowed: boolean;
+  spend_allowed: boolean;
+  policy_id: string | null;
   reason: string;
+  adapter_reference: string | null;
   timestamp: string;
+  idempotent_replay: boolean;
 }
 
 export interface AuditLog {

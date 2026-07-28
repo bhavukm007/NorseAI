@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ShieldAlert } from "lucide-react";
 
 import { apiRequest } from "../../lib/api/client";
-import { ConfirmButton, DataState, PageHeader, StatusBadge } from "./components";
+import { ConfirmButton, DataState, MutationError, PageHeader, StatusBadge } from "./components";
 import type { Agent, Fleet } from "./types";
 
 export function EmergencyPage() {
@@ -44,6 +44,7 @@ export function EmergencyPage() {
           </span>
         </div>
       </div>
+      <MutationError error={fleetAction.error ?? agentAction.error ?? null} />
       <div className="operator-grid two-column">
         <section className="panel operator-panel">
           <div className="panel-header">

@@ -4,6 +4,7 @@ const TOKEN_KEY = "norseai.operator.session";
 
 export interface StoredSession {
   accessToken: string;
+  refreshToken: string;
   expiresAt: string;
   username: string;
   role: string;
@@ -12,7 +13,7 @@ export interface StoredSession {
 export function loadSession(): StoredSession | null {
   try {
     const value = JSON.parse(sessionStorage.getItem(TOKEN_KEY) ?? "null") as StoredSession | null;
-    if (!value?.accessToken || new Date(value.expiresAt).getTime() <= Date.now()) {
+    if (!value?.accessToken || !value.refreshToken) {
       sessionStorage.removeItem(TOKEN_KEY);
       return null;
     }
@@ -39,20 +40,49 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const session = loadSession();
-  const response = await fetch(`${apiBaseUrl}/${path.replace(/^\//, "")}`, {
-    ...init,
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      ...(session ? { Authorization: `Bearer ${session.accessToken}` } : {}),
-      ...init.headers,
-    },
-  });
+interface RefreshResponse {
+  access_token: string;
+  refresh_token: string;
+  expires_at: string;
+  username: string;
+  role: string;
+}
 
+let refreshRequest: Promise<StoredSession> | null = null;
+
+async function refreshSession(session: StoredSession): Promise<StoredSession> {
+  if (!refreshRequest) {
+    refreshRequest = fetch(`${apiBaseUrl}/auth/refresh`, {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: session.refreshToken }),
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new ApiError("Your session has expired.", response.status);
+        const result = (await response.json()) as RefreshResponse;
+        const next = {
+          accessToken: result.access_token,
+          refreshToken: result.refresh_token,
+          expiresAt: result.expires_at,
+          username: result.username,
+          role: result.role,
+        };
+        saveSession(next);
+        return next;
+      })
+      .catch((error) => {
+        saveSession(null);
+        throw error;
+      })
+      .finally(() => {
+        refreshRequest = null;
+      });
+  }
+  return refreshRequest;
+}
+
+async function parseResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    if (response.status === 401 && path !== "auth/login") saveSession(null);
     let message =
       response.status >= 500
         ? "The service is temporarily unavailable."
@@ -67,6 +97,29 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   }
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
+}
+
+export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const request = (session: StoredSession | null) =>
+    fetch(`${apiBaseUrl}/${path.replace(/^\//, "")}`, {
+      ...init,
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...(session ? { Authorization: `Bearer ${session.accessToken}` } : {}),
+        ...init.headers,
+      },
+    });
+  const session = loadSession();
+  let response = await request(session);
+  const canRefresh =
+    response.status === 401 && session && path !== "auth/login" && path !== "auth/refresh";
+  if (canRefresh) {
+    const refreshed = await refreshSession(session);
+    response = await request(refreshed);
+  }
+  if (response.status === 401 && path !== "auth/login") saveSession(null);
+  return parseResponse<T>(response);
 }
 
 export async function downloadAudit(format: "csv" | "jsonl") {

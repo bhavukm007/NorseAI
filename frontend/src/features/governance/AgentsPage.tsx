@@ -3,7 +3,14 @@ import { Pencil, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { apiRequest } from "../../lib/api/client";
-import { ConfirmButton, DataState, PageHeader, StatusBadge } from "./components";
+import {
+  ConfirmButton,
+  DataState,
+  Modal,
+  MutationError,
+  PageHeader,
+  StatusBadge,
+} from "./components";
 import type { Agent, Fleet } from "./types";
 
 export function AgentsPage() {
@@ -19,6 +26,8 @@ export function AgentsPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [draft, setDraft] = useState({ name: "", agent_type: "payments", fleet_id: "" });
+  const [editing, setEditing] = useState<Agent | null>(null);
+  const [editDraft, setEditDraft] = useState({ name: "", agent_type: "" });
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["agents"] });
   const create = useMutation({
     mutationFn: () =>
@@ -42,10 +51,8 @@ export function AgentsPage() {
     onSuccess: refresh,
   });
   const editAgent = (agent: Agent) => {
-    const name = window.prompt("Agent name", agent.name);
-    const agentType = name === null ? null : window.prompt("Agent type", agent.agent_type);
-    if (name?.trim() && agentType?.trim())
-      update.mutate({ id: agent.id, body: { name: name.trim(), agent_type: agentType.trim() } });
+    setEditing(agent);
+    setEditDraft({ name: agent.name, agent_type: agent.agent_type });
   };
   const rows = useMemo(
     () =>
@@ -106,6 +113,7 @@ export function AgentsPage() {
           <Plus size={16} /> Create agent
         </button>
       </form>
+      <MutationError error={create.error ?? update.error ?? setAgentStatus.error ?? null} />
       <div className="toolbar">
         <label className="search-field">
           <Search size={15} />
@@ -196,6 +204,49 @@ export function AgentsPage() {
           </table>
         </div>
       </DataState>
+      <Modal open={Boolean(editing)} title="Edit agent" onClose={() => setEditing(null)}>
+        <form
+          className="modal-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!editing || !editDraft.name.trim() || !editDraft.agent_type.trim()) return;
+            update.mutate(
+              {
+                id: editing.id,
+                body: {
+                  name: editDraft.name.trim(),
+                  agent_type: editDraft.agent_type.trim(),
+                },
+              },
+              { onSuccess: () => setEditing(null) },
+            );
+          }}
+        >
+          <label>
+            Agent name
+            <input
+              required
+              value={editDraft.name}
+              onChange={(event) => setEditDraft({ ...editDraft, name: event.target.value })}
+            />
+          </label>
+          <label>
+            Agent type
+            <input
+              required
+              value={editDraft.agent_type}
+              onChange={(event) => setEditDraft({ ...editDraft, agent_type: event.target.value })}
+            />
+          </label>
+          <MutationError error={update.error} />
+          <div className="modal-actions">
+            <button type="button" onClick={() => setEditing(null)}>
+              Cancel
+            </button>
+            <button className="primary-button">Save changes</button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

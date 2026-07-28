@@ -3,7 +3,14 @@ import { Pencil, Plus } from "lucide-react";
 import { useState } from "react";
 
 import { apiRequest } from "../../lib/api/client";
-import { ConfirmButton, DataState, PageHeader, StatusBadge } from "./components";
+import {
+  ConfirmButton,
+  DataState,
+  Modal,
+  MutationError,
+  PageHeader,
+  StatusBadge,
+} from "./components";
 import type { Agent, FinancialAction, Fleet, Organization, SpendLimit } from "./types";
 
 export function FleetsPage() {
@@ -29,6 +36,8 @@ export function FleetsPage() {
     queryFn: () => apiRequest<SpendLimit[]>("fleet-spend-limits?limit=500"),
   });
   const [draft, setDraft] = useState({ name: "", organization_id: "" });
+  const [editing, setEditing] = useState<Fleet | null>(null);
+  const [editName, setEditName] = useState("");
   const refresh = () => client.invalidateQueries({ queryKey: ["fleets"] });
   const create = useMutation({
     mutationFn: () => apiRequest<Fleet>("fleets", { method: "POST", body: JSON.stringify(draft) }),
@@ -89,6 +98,7 @@ export function FleetsPage() {
           <Plus size={16} /> Create fleet
         </button>
       </form>
+      <MutationError error={create.error ?? update.error ?? status.error ?? null} />
       <DataState loading={fleets.isLoading} error={fleets.error} empty={!fleets.data?.length}>
         <div className="card-grid">
           {fleets.data?.map((fleet) => {
@@ -135,8 +145,8 @@ export function FleetsPage() {
                   <button
                     aria-label={`Edit ${fleet.name}`}
                     onClick={() => {
-                      const name = window.prompt("Fleet name", fleet.name);
-                      if (name?.trim()) update.mutate({ id: fleet.id, name: name.trim() });
+                      setEditing(fleet);
+                      setEditName(fleet.name);
                     }}
                   >
                     <Pencil size={14} /> Edit
@@ -163,6 +173,35 @@ export function FleetsPage() {
           })}
         </div>
       </DataState>
+      <Modal open={Boolean(editing)} title="Edit fleet" onClose={() => setEditing(null)}>
+        <form
+          className="modal-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!editing || !editName.trim()) return;
+            update.mutate(
+              { id: editing.id, name: editName.trim() },
+              { onSuccess: () => setEditing(null) },
+            );
+          }}
+        >
+          <label>
+            Fleet name
+            <input
+              required
+              value={editName}
+              onChange={(event) => setEditName(event.target.value)}
+            />
+          </label>
+          <MutationError error={update.error} />
+          <div className="modal-actions">
+            <button type="button" onClick={() => setEditing(null)}>
+              Cancel
+            </button>
+            <button className="primary-button">Save changes</button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

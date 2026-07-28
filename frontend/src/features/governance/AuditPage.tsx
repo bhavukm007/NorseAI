@@ -3,10 +3,12 @@ import { Download, Search } from "lucide-react";
 import { useState } from "react";
 
 import { apiRequest, downloadAudit } from "../../lib/api/client";
-import { DataState, PageHeader, StatusBadge } from "./components";
+import { DataState, MutationError, PageHeader, StatusBadge } from "./components";
 import type { AuditLog } from "./types";
 
 export function AuditPage() {
+  const [exportError, setExportError] = useState<Error | null>(null);
+  const [exporting, setExporting] = useState<"csv" | "jsonl" | null>(null);
   const [filters, setFilters] = useState({
     search: "",
     actor: "",
@@ -38,6 +40,17 @@ export function AuditPage() {
       [key]: value,
       offset: key === "offset" ? Number(value) : 0,
     }));
+  const exportAudit = async (format: "csv" | "jsonl") => {
+    setExportError(null);
+    setExporting(format);
+    try {
+      await downloadAudit(format);
+    } catch (error) {
+      setExportError(error instanceof Error ? error : new Error("Audit export failed."));
+    } finally {
+      setExporting(null);
+    }
+  };
 
   return (
     <div className="operator-page">
@@ -47,15 +60,16 @@ export function AuditPage() {
         description="Search, filter, inspect, and export every governance decision."
         actions={
           <>
-            <button onClick={() => downloadAudit("csv")}>
-              <Download size={15} /> CSV
+            <button disabled={exporting !== null} onClick={() => void exportAudit("csv")}>
+              <Download size={15} /> {exporting === "csv" ? "Exporting…" : "CSV"}
             </button>
-            <button onClick={() => downloadAudit("jsonl")}>
-              <Download size={15} /> JSONL
+            <button disabled={exporting !== null} onClick={() => void exportAudit("jsonl")}>
+              <Download size={15} /> {exporting === "jsonl" ? "Exporting…" : "JSONL"}
             </button>
           </>
         }
       />
+      <MutationError error={exportError} />
       <div className="audit-filters panel">
         <label className="search-field">
           <Search size={15} />

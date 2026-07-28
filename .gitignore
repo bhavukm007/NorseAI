@@ -1,6 +1,7 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.pytest-tmp/
 .ruff_cache/
 .coverage
 htmlcov/
@@ -16,3 +17,6 @@ frontend/dist/
 .DS_Store
 Thumbs.db
 *.log
+PresentationAssets/Runtime/
+ppt-images/*.db
+ppt-images/*.zip

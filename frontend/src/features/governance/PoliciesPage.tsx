@@ -3,7 +3,14 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { apiRequest } from "../../lib/api/client";
-import { ConfirmButton, DataState, PageHeader, StatusBadge } from "./components";
+import {
+  ConfirmButton,
+  DataState,
+  Modal,
+  MutationError,
+  PageHeader,
+  StatusBadge,
+} from "./components";
 import type { Agent, Permission, Policy } from "./types";
 
 const empty = {
@@ -32,6 +39,9 @@ export function PoliciesPage() {
   });
   const [draft, setDraft] = useState(empty);
   const [assignment, setAssignment] = useState({ agent_id: "", policy_id: "" });
+  const [editing, setEditing] = useState<Policy | null>(null);
+  const [editPriority, setEditPriority] = useState(0);
+  const [validationError, setValidationError] = useState("");
   const refresh = () => {
     client.invalidateQueries({ queryKey: ["policies"] });
     client.invalidateQueries({ queryKey: ["permissions"] });
@@ -93,7 +103,17 @@ export function PoliciesPage() {
         className="policy-form panel"
         onSubmit={(e) => {
           e.preventDefault();
-          create.mutate();
+          setValidationError("");
+          try {
+            const value = JSON.parse(draft.conditions) as unknown;
+            if (!value || Array.isArray(value) || typeof value !== "object") {
+              setValidationError("Conditions must be a JSON object.");
+              return;
+            }
+            create.mutate();
+          } catch {
+            setValidationError("Conditions must contain valid JSON.");
+          }
         }}
       >
         <label>
@@ -156,6 +176,22 @@ export function PoliciesPage() {
           <Plus size={16} /> Create policy
         </button>
       </form>
+      {validationError && (
+        <div className="form-alert" role="alert">
+          {validationError}
+        </div>
+      )}
+      <MutationError
+        error={
+          create.error ??
+          remove.error ??
+          toggle.error ??
+          reprioritize.error ??
+          assign.error ??
+          unassign.error ??
+          null
+        }
+      />
       <form
         className="assignment-bar panel"
         onSubmit={(e) => {
@@ -240,12 +276,8 @@ export function PoliciesPage() {
                       <button
                         aria-label={`Edit ${policy.name}`}
                         onClick={() => {
-                          const value = window.prompt(
-                            "Evaluation priority",
-                            String(policy.priority),
-                          );
-                          if (value !== null && Number.isFinite(Number(value)))
-                            reprioritize.mutate({ id: policy.id, priority: Number(value) });
+                          setEditing(policy);
+                          setEditPriority(policy.priority);
                         }}
                       >
                         <Pencil size={14} /> Edit priority
@@ -267,6 +299,37 @@ export function PoliciesPage() {
           </table>
         </div>
       </DataState>
+      <Modal open={Boolean(editing)} title="Edit policy priority" onClose={() => setEditing(null)}>
+        <form
+          className="modal-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!editing || !Number.isInteger(editPriority) || editPriority < 0) return;
+            reprioritize.mutate(
+              { id: editing.id, priority: editPriority },
+              { onSuccess: () => setEditing(null) },
+            );
+          }}
+        >
+          <label>
+            Evaluation priority
+            <input
+              min="0"
+              required
+              type="number"
+              value={editPriority}
+              onChange={(event) => setEditPriority(Number(event.target.value))}
+            />
+          </label>
+          <MutationError error={reprioritize.error} />
+          <div className="modal-actions">
+            <button type="button" onClick={() => setEditing(null)}>
+              Cancel
+            </button>
+            <button className="primary-button">Save priority</button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

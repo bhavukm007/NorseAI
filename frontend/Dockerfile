@@ -18,10 +18,12 @@ RUN --mount=type=cache,target=/root/.npm \
       --fetch-timeout=300000
 
 COPY . .
+RUN API_ORIGIN="${VITE_API_BASE_URL%/api/v1}" && \
+    sed -i "s|__API_ORIGIN__|${API_ORIGIN}|g" nginx.conf
 RUN npm run build
 
 FROM nginx:1.27-alpine AS runtime
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

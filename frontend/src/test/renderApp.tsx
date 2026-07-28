@@ -13,6 +13,7 @@ export function renderApp(path = "/dashboard") {
     "norseai.operator.session",
     JSON.stringify({
       accessToken: "test-token",
+      refreshToken: "test-refresh-token-that-is-long-enough-for-tests",
       expiresAt: new Date(Date.now() + 60_000).toISOString(),
       username: "admin",
       role: "admin",

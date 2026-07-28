@@ -3,7 +3,7 @@ import { CircleDollarSign, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { apiRequest } from "../../lib/api/client";
-import { DataState, PageHeader, StatusBadge } from "./components";
+import { DataState, MutationError, PageHeader, StatusBadge } from "./components";
 import type { Agent, FinancialAction, Fleet, Organization, Overview, SpendLimit } from "./types";
 
 export function BudgetsPage() {
@@ -192,6 +192,7 @@ export function BudgetsPage() {
           <Plus size={16} /> Add budget
         </button>
       </form>
+      <MutationError error={create.error} />
       <DataState
         loading={agentLimits.isLoading || fleetLimits.isLoading || organizationLimits.isLoading}
         error={agentLimits.error ?? fleetLimits.error ?? organizationLimits.error}

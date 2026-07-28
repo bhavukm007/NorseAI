@@ -9,7 +9,9 @@ import { AgentsPage } from "../features/governance/AgentsPage";
 import { AuditPage } from "../features/governance/AuditPage";
 import { BudgetsPage } from "../features/governance/BudgetsPage";
 import { EmergencyPage } from "../features/governance/EmergencyPage";
+import { FinancialActionsPage } from "../features/governance/FinancialActionsPage";
 import { FleetsPage } from "../features/governance/FleetsPage";
+import { OrganizationsPage } from "../features/governance/OrganizationsPage";
 import { PoliciesPage } from "../features/governance/PoliciesPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 
@@ -30,10 +32,12 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="/dashboard" replace /> },
           { path: "dashboard", element: <DashboardPage /> },
+          { path: "organizations", element: <OrganizationsPage /> },
           { path: "agents", element: <AgentsPage /> },
           { path: "fleets", element: <FleetsPage /> },
           { path: "policies", element: <PoliciesPage /> },
           { path: "budgets", element: <BudgetsPage /> },
+          { path: "financial-actions", element: <FinancialActionsPage /> },
           { path: "audit", element: <AuditPage /> },
           { path: "emergency", element: <EmergencyPage /> },
           {

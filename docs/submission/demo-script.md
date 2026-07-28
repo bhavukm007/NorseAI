@@ -12,27 +12,31 @@ budget, fleet status, execution, and evidence one mandatory server-side workflow
 Sign in and open **Overview**. Point out live API health, enabled agents and fleets, budget
 utilization, emergency state, recent governed actions, and audit events.
 
-## 3. Show the governed agent — 45 seconds
+## 3. Create the governed hierarchy — 55 seconds
 
-Open **Agents**, **Fleets**, and **Policies**. Explain that the agent belongs to an
-organization-owned fleet and receives deterministic policy assignments. Emphasize default denial
-and deny precedence at equal priority.
+Open **Organizations** and create the demonstration organization. Open **Fleets**, create its
+fleet, then open **Agents** and create an enabled financial agent in that fleet.
 
-## 4. Show budget enforcement — 40 seconds
+Open **Policies**, create an allow policy for the demonstration action, and assign it to the agent.
+Emphasize default denial and deny precedence at equal priority.
 
-Open **Budgets** and show transaction, daily, or monthly limits at agent, fleet, and organization
-scope. Explain that all required scopes reserve budget before execution.
+## 4. Configure budget enforcement — 40 seconds
 
-## 5. Execute and trace a decision — 55 seconds
+Open **Budgets** and configure transaction, daily, and monthly limits at agent, fleet, and
+organization scope. Explain that all required scopes reserve budget before execution.
 
-Submit a sandbox financial action through `POST /api/v1/financial-actions`. Return to **Overview**
-to show settlement. Open **Audit Center**, locate the event, and point out actor, request,
-correlation, policy, spend, and execution evidence. Export CSV or JSONL.
+## 5. Execute, approve, and reverse — 60 seconds
 
-## 6. Demonstrate emergency control — 35 seconds
+Open **Financial Actions**, select the organization, fleet, and agent, enter a payment, and select
+**Submit governed action**. Show the approved decision, policy, adapter, and audit references.
+Reverse the settled transaction from the same page and show the reversed status.
+
+## 6. Demonstrate denial and emergency control — 45 seconds
 
 Open **Emergency** and stop the fleet. Explain that subsequent actions are rejected before adapter
-invocation. Restore the fleet only if the remaining demo requires it.
+invocation. Return to **Financial Actions**, submit another request, and show its denied decision.
+Open **Audit Center**, locate the approval, reversal, emergency stop, and denial events, and point
+out actor, request, correlation, policy, spend, and execution evidence. Export CSV or JSONL.
 
 ## 7. Show AI governance breadth — 60 seconds
 

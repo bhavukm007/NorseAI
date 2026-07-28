@@ -17,12 +17,15 @@ from sqlalchemy import select
 def test_settings(tmp_path) -> Settings:
     """Return isolated settings for tests."""
     return Settings(
+        _env_file=None,
         environment="test",
         docs_enabled=False,
         database_url=f"sqlite:///{tmp_path / 'test.db'}",
         jwt_secret="test-secret-that-is-at-least-32-bytes",
         jwt_issuer="test-issuer",
         jwt_audience="test-audience",
+        operator_username="admin",
+        operator_password="norseai-demo",
     )
 
 

@@ -9,7 +9,9 @@ import { AgentsPage } from "./AgentsPage";
 import { AuditPage } from "./AuditPage";
 import { BudgetsPage } from "./BudgetsPage";
 import { EmergencyPage } from "./EmergencyPage";
+import { FinancialActionsPage } from "./FinancialActionsPage";
 import { FleetsPage } from "./FleetsPage";
+import { OrganizationsPage } from "./OrganizationsPage";
 import { PoliciesPage } from "./PoliciesPage";
 
 function renderPage(page: React.ReactNode) {
@@ -38,10 +40,12 @@ describe("operator governance pages", () => {
 
   it.each([
     [<AgentsPage />, "Financial agents"],
+    [<OrganizationsPage />, "Organizations"],
     [<FleetsPage />, "Financial agent fleets"],
     [<PoliciesPage />, "Policy management"],
     [<BudgetsPage />, "Budget management"],
     [<EmergencyPage />, "Emergency control center"],
+    [<FinancialActionsPage />, "Financial actions"],
   ])("renders the live management surface", (page, heading) => {
     renderPage(page);
     expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();

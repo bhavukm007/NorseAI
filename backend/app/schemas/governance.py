@@ -172,6 +172,10 @@ class OrganizationCreate(BaseModel):
     name: str = Field(min_length=1, max_length=150)
 
 
+class OrganizationUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=150)
+
+
 class OrganizationRead(ORMModel):
     id: uuid.UUID
     name: str

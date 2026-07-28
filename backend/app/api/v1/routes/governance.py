@@ -30,6 +30,7 @@ from backend.app.schemas.governance import (
     OrganizationCreate,
     OrganizationRead,
     OrganizationSpendLimitRead,
+    OrganizationUpdate,
     OverviewRead,
     PermissionCreate,
     PermissionRead,
@@ -341,6 +342,56 @@ def list_organizations(
         OrganizationRead.model_validate(item)
         for item in services.fleets.list_organizations(offset, limit)
     ]
+
+
+@router.patch("/organizations/{organization_id}", response_model=OrganizationRead)
+def update_organization(
+    organization_id: uuid.UUID,
+    data: OrganizationUpdate,
+    services: ServiceDependency,
+    _: WritePrincipal,
+) -> OrganizationRead:
+    return OrganizationRead.model_validate(
+        services.fleets.update_organization(organization_id, data)
+    )
+
+
+def _organization_status_change(
+    organization_id: uuid.UUID,
+    value: GovernanceStatus,
+    services: Services,
+) -> OrganizationRead:
+    return OrganizationRead.model_validate(
+        services.fleets.set_organization_status(organization_id, value)
+    )
+
+
+@router.post("/organizations/{organization_id}/enable", response_model=OrganizationRead)
+def enable_organization(
+    organization_id: uuid.UUID,
+    services: ServiceDependency,
+    _: AdminPrincipal,
+) -> OrganizationRead:
+    return _organization_status_change(organization_id, GovernanceStatus.ENABLED, services)
+
+
+@router.post("/organizations/{organization_id}/disable", response_model=OrganizationRead)
+def disable_organization(
+    organization_id: uuid.UUID,
+    services: ServiceDependency,
+    _: AdminPrincipal,
+) -> OrganizationRead:
+    return _organization_status_change(organization_id, GovernanceStatus.DISABLED, services)
+
+
+@router.delete("/organizations/{organization_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_organization(
+    organization_id: uuid.UUID,
+    services: ServiceDependency,
+    _: AdminPrincipal,
+) -> Response:
+    services.fleets.delete_organization(organization_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/fleets", response_model=FleetRead, status_code=status.HTTP_201_CREATED)

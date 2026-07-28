@@ -7,6 +7,7 @@ import {
   FileClock,
   Gauge,
   Landmark,
+  ReceiptText,
   Network,
   ShieldCheck,
   X,
@@ -15,10 +16,12 @@ import { NavLink } from "react-router-dom";
 
 const navigation = [
   { label: "Overview", path: "/dashboard", icon: Gauge },
-  { label: "Agents", path: "/agents", icon: Bot },
+  { label: "Organizations", path: "/organizations", icon: Building2 },
   { label: "Fleets", path: "/fleets", icon: Network },
+  { label: "Agents", path: "/agents", icon: Bot },
   { label: "Policies", path: "/policies", icon: ShieldCheck },
   { label: "Budgets", path: "/budgets", icon: CircleDollarSign },
+  { label: "Financial Actions", path: "/financial-actions", icon: ReceiptText },
   { label: "Audit Center", path: "/audit", icon: FileClock },
   { label: "Emergency", path: "/emergency", icon: BotOff },
   { label: "AI Assessment Lab", path: "/assessment-lab", icon: Building2 },

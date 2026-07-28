@@ -5,6 +5,7 @@ import { AuthContext } from "./auth";
 
 interface LoginResponse {
   access_token: string;
+  refresh_token: string;
   expires_at: string;
   username: string;
   role: string;
@@ -32,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     const next = {
       accessToken: result.access_token,
+      refreshToken: result.refresh_token,
       expiresAt: result.expires_at,
       username: result.username,
       role: result.role,

@@ -3,7 +3,12 @@
 import uuid
 
 from backend.app.models import Fleet, GovernanceStatus, Organization
-from backend.app.schemas.governance import FleetCreate, FleetUpdate, OrganizationCreate
+from backend.app.schemas.governance import (
+    FleetCreate,
+    FleetUpdate,
+    OrganizationCreate,
+    OrganizationUpdate,
+)
 from backend.app.services.base import Service
 
 
@@ -29,6 +34,47 @@ class FleetService(Service):
 
     def list_organizations(self, offset: int, limit: int) -> list[Organization]:
         return self.repos.organizations.list(offset, limit)
+
+    def get_organization(self, organization_id: uuid.UUID) -> Organization:
+        organization = self.repos.organizations.get(organization_id)
+        if not organization:
+            raise self.not_found("Organization")
+        return organization
+
+    def update_organization(
+        self, organization_id: uuid.UUID, data: OrganizationUpdate
+    ) -> Organization:
+        organization = self.get_organization(organization_id)
+        organization.name = data.name.strip()
+        self.repos.session.flush()
+        self.audit.record(
+            "organization.update",
+            f"organizations/{organization.id}",
+            organization_id=organization.id,
+        )
+        return organization
+
+    def set_organization_status(
+        self, organization_id: uuid.UUID, value: GovernanceStatus
+    ) -> Organization:
+        organization = self.get_organization(organization_id)
+        organization.status = value
+        self.repos.session.flush()
+        self.audit.record(
+            f"organization.{value.value}",
+            f"organizations/{organization.id}",
+            organization_id=organization.id,
+        )
+        return organization
+
+    def delete_organization(self, organization_id: uuid.UUID) -> None:
+        organization = self.get_organization(organization_id)
+        self.audit.record(
+            "organization.delete",
+            f"organizations/{organization.id}",
+            organization_id=organization.id,
+        )
+        self.repos.organizations.delete(organization)
 
     def list(self, offset: int, limit: int) -> list[Fleet]:
         return self.repos.fleets.list(offset, limit)

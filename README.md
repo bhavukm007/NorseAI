@@ -39,8 +39,9 @@ flowchart LR
     ADAPTER --> AUDIT
 ```
 
-The server is the enforcement boundary. Preview endpoints can evaluate permission and spend rules,
-but only `POST /api/v1/financial-actions` invokes the financial adapter.
+The server is the enforcement boundary. Operators submit and reverse governed transactions from
+the **Financial Actions** dashboard page; that page uses the protected financial gateway, and no
+browser-side path can bypass policy, status, or budget enforcement.
 
 ## Architecture
 
@@ -78,7 +79,8 @@ from operational financial records and uses validated browser-local storage.
 
 ## Local setup
 
-Requirements: Python 3.11+, Node.js 20+, and PostgreSQL.
+Requirements: Python 3.11+, Node.js 20+, and PostgreSQL. Copy `.env.example` before starting the
+API and replace its demonstration secrets when the environment is shared or exposed.
 
 ```powershell
 python -m venv .venv
@@ -104,6 +106,26 @@ Open `http://localhost:5173` and sign in with `APP_OPERATOR_USERNAME` and
 The bootstrap operator is created only when that username does not already exist. Passwords are
 stored as scrypt hashes, not plaintext.
 
+### Complete operator workflow
+
+The dashboard supports the complete governed transaction lifecycle:
+
+1. **Login** — sign in with the configured bootstrap operator.
+2. **Organizations** — create the top-level governance and budget scope.
+3. **Fleets** — create a fleet and attach it to the organization.
+4. **Agents** — create an enabled financial agent in that fleet.
+5. **Policies** — create an allow, deny, or conditional policy and assign it to the agent.
+6. **Budgets** — configure transaction, daily, and monthly limits for the organization, fleet,
+   and agent.
+7. **Financial Actions** — select the organization, fleet, and agent; enter a payment, transfer,
+   or refund; then submit the governed action.
+8. **Approval or denial** — inspect the on-page decision, policy reference, adapter reference, and
+   audit reference. Denied requests never reach the adapter.
+9. **Reversal** — reverse a settled transaction from the settled-transactions list.
+10. **Audit Center** — filter the append-only evidence and export CSV or JSONL.
+11. **Emergency** — emergency-stop the fleet, submit another action to verify denial, and confirm
+    the resulting audit record.
+
 ## Container setup
 
 Compose uses production defaults and requires explicit secrets:
@@ -117,6 +139,9 @@ docker compose up --build
 
 Open `http://localhost:3000`. The backend runs migrations before starting. For local-only
 development, set `APP_ENVIRONMENT=development` and `APP_DOCS_ENABLED=true` explicitly.
+If ports 3000 or 8000 are already occupied, set `FRONTEND_PORT`, `BACKEND_PORT`,
+`FRONTEND_ORIGIN`, and `PUBLIC_API_BASE_URL` to matching alternate localhost values before
+building. The defaults remain 3000 and 8000.
 
 See [configuration and security architecture](docs/architecture/security-architecture.md) for the
 complete environment variable reference.
@@ -141,16 +166,16 @@ semantics.
 
 ## Judge-friendly walkthrough
 
-Prepare one organization, fleet, enabled financial agent, allow policy, permission assignment, and
-budget at each scope.
+Use the dashboard to create one organization, fleet, enabled financial agent, allow policy,
+assignment, and budget at every scope.
 
-1. **Sign in** and open **Overview** to establish the live control plane.
-2. **Agents** — show the financial agent and its fleet assignment.
-3. **Policies** — explain deterministic precedence and default denial.
-4. **Budgets** — show agent, fleet, and organization limits.
-5. Submit a governed action through the API and return to **Overview** to show the settled result.
-6. **Emergency** — stop the fleet; demonstrate that later actions are rejected before execution.
-7. **Audit Center** — filter the decision trail and export CSV or JSONL evidence.
+1. **Sign in**, then open **Organizations**, **Fleets**, and **Agents** to create the hierarchy.
+2. **Policies** — create and assign the authorization rule; explain default denial.
+3. **Budgets** — configure agent, fleet, and organization limits.
+4. **Financial Actions** — submit a governed payment and show its approved decision.
+5. Reverse the settled transaction from **Financial Actions**.
+6. **Emergency** — stop the fleet, return to **Financial Actions**, and show a denied request.
+7. **Audit Center** — locate the approval, reversal, emergency stop, and denial evidence.
 8. **AI Assessment Lab** — run the one-click assessment and export the executive report.
 
 The recommended narration is in [the demo script](docs/submission/demo-script.md).
@@ -177,8 +202,10 @@ generation, and a PostgreSQL service test.
 
 ## Screenshots
 
-No product screenshots are committed. `frontend/public/og.jpg` is the social preview image, not a
-UI screenshot. For submission, capture:
+Submission screenshots are stored under `PresentationAssets/Screenshots`; working capture assets
+also exist under `ppt-images`. `frontend/public/og.jpg` is the social preview image, not a UI
+screenshot. The cleanup disposition for working assets and runtime databases is documented in
+`docs/submission/cleanup-report.md`.
 
 - Operator Overview with live governance metrics
 - Agents, fleets, policies, and hierarchical budgets
