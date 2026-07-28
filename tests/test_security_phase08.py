@@ -39,6 +39,31 @@ def test_login_refresh_rotation_logout_and_password_hash(client, test_settings) 
     assert client.get("/api/v1/auth/me", headers=headers).status_code == 401
 
 
+def test_demo_administrator_bootstrap_is_idempotent(test_settings) -> None:
+    from backend.app.main import create_app
+    from fastapi.testclient import TestClient
+
+    with (
+        TestClient(create_app(test_settings)) as first,
+        first.app.state.session_factory() as session,
+    ):
+        original = session.scalar(
+            select(User).where(User.username == test_settings.operator_username)
+        )
+        original_hash = original.password_hash
+
+    with (
+        TestClient(create_app(test_settings)) as second,
+        second.app.state.session_factory() as session,
+    ):
+        operators = list(
+            session.scalars(select(User).where(User.username == test_settings.operator_username))
+        )
+
+    assert len(operators) == 1
+    assert operators[0].password_hash == original_hash
+
+
 def test_disabled_user_and_expired_session_are_rejected(client, auth_headers) -> None:
     headers = auth_headers()
     with client.app.state.session_factory() as session:

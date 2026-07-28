@@ -295,6 +295,9 @@ $BackendPort = [int](Get-ConfigValue "BACKEND_PORT" "8000")
 $ComposeProject = Get-ConfigValue "COMPOSE_PROJECT_NAME" "norseai"
 $PostgresUser = Get-ConfigValue "POSTGRES_USER" "norseai"
 $PostgresDatabase = Get-ConfigValue "POSTGRES_DB" "norseai"
+$AppEnvironment = Get-ConfigValue "APP_ENVIRONMENT" "development"
+$OperatorUsername = Get-ConfigValue "OPERATOR_USERNAME" "admin"
+$OperatorPassword = Get-ConfigValue "OPERATOR_PASSWORD" "admin123"
 $FrontendOrigin = Get-ConfigValue "FRONTEND_ORIGIN" "http://localhost:$FrontendPort"
 $PublicApiBaseUrl = Get-ConfigValue "PUBLIC_API_BASE_URL" "http://localhost:$BackendPort/api/v1"
 $env:FRONTEND_ORIGIN = $FrontendOrigin
@@ -348,3 +351,25 @@ Write-Host ""
 Write-Host "Swagger:"
 Write-Host "$BackendUrl/docs" -ForegroundColor Cyan
 Write-Host "=====================================" -ForegroundColor DarkCyan
+
+if ($AppEnvironment -eq "development") {
+    $backendLogs = @(docker compose logs --no-color --no-log-prefix backend 2>$null)
+    $administratorCreated = -not $StackIsHealthy -and (
+        $backendLogs -match "demo_administrator_created"
+    )
+    if ($administratorCreated) {
+        Write-Host ""
+        Write-Host "=====================================" -ForegroundColor DarkCyan
+        Write-Host "Demo credentials" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "Username: $OperatorUsername"
+        Write-Host "Password: $OperatorPassword"
+        Write-Host ""
+        Write-Host "Change these credentials before production deployment." -ForegroundColor Yellow
+        Write-Host "=====================================" -ForegroundColor DarkCyan
+    }
+    else {
+        Write-Host ""
+        Write-Host "Demo administrator detected." -ForegroundColor Green
+    }
+}

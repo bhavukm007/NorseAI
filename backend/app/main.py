@@ -39,27 +39,37 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         if resolved_settings.environment == "test":
             Base.metadata.create_all(session_factory.kw["bind"])
-        with session_factory() as session:
-            operator = session.scalar(
-                select(User).where(User.username == resolved_settings.operator_username)
-            )
-            if operator is None:
-                session.add(
-                    User(
-                        username=resolved_settings.operator_username,
-                        role=Role.ADMIN,
-                        password_hash=hash_password(
-                            resolved_settings.operator_password.get_secret_value()
+        if resolved_settings.environment in {"development", "test"}:
+            with session_factory() as session:
+                operator = session.scalar(
+                    select(User).where(User.username == resolved_settings.operator_username)
+                )
+                if operator is None:
+                    session.add(
+                        User(
+                            username=resolved_settings.operator_username,
+                            role=Role.ADMIN,
+                            password_hash=hash_password(
+                                resolved_settings.operator_password.get_secret_value()
+                            ),
                         ),
                     )
-                )
-                session.commit()
-            elif not operator.password_hash:
-                operator.password_hash = hash_password(
-                    resolved_settings.operator_password.get_secret_value()
-                )
-                operator.enabled = True
-                session.commit()
+                    session.commit()
+                    logger.info(
+                        "demo_administrator_created",
+                        extra={"username": resolved_settings.operator_username},
+                    )
+                else:
+                    if not operator.password_hash:
+                        operator.password_hash = hash_password(
+                            resolved_settings.operator_password.get_secret_value()
+                        )
+                        operator.enabled = True
+                        session.commit()
+                    logger.info(
+                        "demo_administrator_detected",
+                        extra={"username": resolved_settings.operator_username},
+                    )
         logger.info(
             "application_started",
             extra={
@@ -125,7 +135,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             response = await call_next(request)
         response.headers["X-Request-ID"] = request_id
         response.headers["X-Correlation-ID"] = correlation_id
-        response.headers["Content-Security-Policy"] = resolved_settings.csp_policy
+        if path in {"/docs", "/redoc"}:
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'none'; "
+                "script-src 'unsafe-inline' https://cdn.jsdelivr.net; "
+                "style-src 'unsafe-inline' https://cdn.jsdelivr.net; "
+                "img-src data: https://fastapi.tiangolo.com; "
+                "connect-src 'self'; "
+                "frame-ancestors 'none'; base-uri 'none'"
+            )
+        else:
+            response.headers["Content-Security-Policy"] = resolved_settings.csp_policy
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["X-Content-Type-Options"] = "nosniff"
@@ -183,6 +203,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    if resolved_settings.docs_enabled:
+
+        @application.get("/openapi.json", include_in_schema=False)
+        def root_openapi_schema():
+            return application.openapi()
+
     application.include_router(api_router, prefix=resolved_settings.api_v1_prefix)
     return application
 

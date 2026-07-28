@@ -101,7 +101,29 @@ chmod +x run.sh
 
 The runner verifies Docker and Compose, creates `.env` from `.env.example` when needed, checks the
 configured ports, builds the containers, waits for every service health check, and prints the
-frontend, backend, and Swagger URLs. Existing `.env` files are never overwritten.
+frontend, backend, Swagger URLs, and first-run demo credentials. Existing `.env` files are never
+overwritten.
+
+### First login
+
+On the first development startup, NorseAI creates one demo administrator:
+
+```text
+Username: admin
+Password: admin123
+```
+
+Open `http://localhost:3000`, enter those credentials on the login page, and select **Sign in**.
+The account is created only when no user named `admin` exists, so restarting the application never
+creates duplicates or resets an existing password.
+
+The bootstrap account is for local development and demonstrations only. Change
+`OPERATOR_USERNAME` and `OPERATOR_PASSWORD` before sharing or deploying the application. Demo
+bootstrap is disabled in staging and production environments.
+
+Interactive API documentation is available at `http://localhost:8000/docs`; its OpenAPI schema is
+available at both `http://localhost:8000/openapi.json` and
+`http://localhost:8000/api/v1/openapi.json`.
 
 Stop the stack with `.\stop.ps1` on Windows or `bash stop.sh` on Linux/macOS. To remove containers,
 PostgreSQL/Redis volumes, and unused Docker data, run `.\clean.ps1` or `bash clean.sh`; cleanup
@@ -133,11 +155,12 @@ npm run dev
 ```
 
 Open `http://localhost:5173` and sign in with `APP_OPERATOR_USERNAME` and
-`APP_OPERATOR_PASSWORD`. Development API documentation is available at
-`http://localhost:8000/docs`.
+`APP_OPERATOR_PASSWORD` (`admin` / `admin123` in an unchanged `.env.example`). Development API
+documentation is available at `http://localhost:8000/docs`.
 
-The bootstrap operator is created only when that username does not already exist. Passwords are
-stored as scrypt hashes, not plaintext.
+The development bootstrap operator is created only when that username does not already exist.
+Passwords are stored as scrypt hashes, not plaintext. Staging and production never create a demo
+operator automatically.
 
 ### Complete operator workflow
 

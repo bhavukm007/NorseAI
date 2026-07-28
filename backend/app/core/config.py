@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     jwt_issuer: str = "norseai"
     jwt_audience: str = "norseai-api"
     operator_username: str = "admin"
-    operator_password: SecretStr = SecretStr("norseai-demo")
+    operator_password: SecretStr = SecretStr("admin123")
     access_token_minutes: int = Field(default=60, ge=5, le=1440)
     refresh_token_days: int = Field(default=7, ge=1, le=90)
     login_rate_limit: int = Field(default=10, ge=1, le=1000)
@@ -59,10 +59,10 @@ class Settings(BaseSettings):
                 raise ValueError("APP_JWT_SECRET must contain at least 32 characters")
         if self.environment == "production" and self.debug:
             raise ValueError("APP_DEBUG must be false in production")
-        if (
-            self.environment == "production"
-            and self.operator_password.get_secret_value() == "norseai-demo"
-        ):
+        if self.environment == "production" and self.operator_password.get_secret_value() in {
+            "admin123",
+            "norseai-demo",
+        }:
             raise ValueError("APP_OPERATOR_PASSWORD must be changed in production")
         return self
 
