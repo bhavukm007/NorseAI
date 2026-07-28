@@ -32,7 +32,9 @@ def test_swagger_and_root_openapi_are_available_when_docs_are_enabled(test_setti
 
     assert docs.status_code == 200
     assert "Swagger UI" in docs.text
-    assert "cdn.jsdelivr.net" in docs.headers["content-security-policy"]
+    assert "/docs-assets/swagger-ui-bundle.js" in docs.text
+    assert "cdn.jsdelivr.net" not in docs.text
+    assert "script-src 'self' 'unsafe-inline'" in docs.headers["content-security-policy"]
     assert root_schema.status_code == 200
     assert root_schema.json()["openapi"].startswith("3.")
     assert versioned_schema.status_code == 200

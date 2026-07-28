@@ -184,17 +184,17 @@ The dashboard supports the complete governed transaction lifecycle:
 
 ## Container setup
 
-Compose uses production defaults and requires explicit secrets:
+For a local demonstration, Compose has development defaults and can start directly:
 
 ```powershell
-$env:JWT_SECRET = "<random value of at least 32 characters>"
-$env:OPERATOR_PASSWORD = "<strong operator password>"
-$env:POSTGRES_PASSWORD = "<strong database password>"
 docker compose up --build
 ```
 
-Open `http://localhost:3000`. The backend runs migrations before starting. For local-only
-development, set `APP_ENVIRONMENT=development` and `APP_DOCS_ENABLED=true` explicitly.
+Open `http://localhost:3000` and sign in with `admin` / `admin123`. The backend runs migrations,
+creates the development demo administrator once, and serves Swagger at `http://localhost:8000/docs`.
+Before any shared or production deployment, explicitly set `APP_ENVIRONMENT=production`,
+`JWT_SECRET`, `OPERATOR_PASSWORD`, and `POSTGRES_PASSWORD` to secure values. Production
+configuration rejects the demo operator password.
 If ports 3000 or 8000 are already occupied, set `FRONTEND_PORT`, `BACKEND_PORT`,
 `FRONTEND_ORIGIN`, and `PUBLIC_API_BASE_URL` to matching alternate localhost values before
 building. The defaults remain 3000 and 8000.

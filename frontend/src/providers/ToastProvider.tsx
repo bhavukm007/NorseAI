@@ -32,7 +32,7 @@ export function ToastProvider({ children }: PropsWithChildren) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="toast-region" aria-live="polite" aria-label="Notifications">
+      <div className="toast-region" aria-live="polite" aria-label="Notifications" role="region">
         {toasts.map((toast) => {
           const Icon = toastIcons[toast.type];
           return (

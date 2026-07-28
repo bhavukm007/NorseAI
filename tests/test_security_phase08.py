@@ -64,6 +64,32 @@ def test_demo_administrator_bootstrap_is_idempotent(test_settings) -> None:
     assert operators[0].password_hash == original_hash
 
 
+def test_legacy_demo_placeholder_is_migrated(test_settings) -> None:
+    from backend.app.core.security import hash_password, verify_password
+    from backend.app.main import create_app
+    from fastapi.testclient import TestClient
+    from pydantic import SecretStr
+
+    settings = test_settings.model_copy(update={"operator_password": SecretStr("admin123")})
+    with (
+        TestClient(create_app(settings)) as first,
+        first.app.state.session_factory() as session,
+    ):
+        operator = session.scalar(select(User).where(User.username == "admin"))
+        operator.password_hash = hash_password("replace-with-a-strong-bootstrap-password")
+        session.commit()
+
+    with (
+        TestClient(create_app(settings)) as migrated,
+        migrated.app.state.session_factory() as session,
+    ):
+        operator = session.scalar(select(User).where(User.username == "admin"))
+        assert verify_password("admin123", operator.password_hash)
+        assert not verify_password(
+            "replace-with-a-strong-bootstrap-password", operator.password_hash
+        )
+
+
 def test_disabled_user_and_expired_session_are_rejected(client, auth_headers) -> None:
     headers = auth_headers()
     with client.app.state.session_factory() as session:

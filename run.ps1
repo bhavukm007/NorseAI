@@ -290,6 +290,32 @@ if (-not (Test-Path -LiteralPath ".env")) {
     Write-Success "Created .env from .env.example"
 }
 
+$LegacyDemoPassword = "replace-with-a-strong-bootstrap-password"
+$ExplicitOperatorPassword = [Environment]::GetEnvironmentVariable("OPERATOR_PASSWORD")
+if (
+    [string]::IsNullOrWhiteSpace($ExplicitOperatorPassword) -and
+    (Get-ConfigValue "APP_ENVIRONMENT" "development") -eq "development" -and
+    (Get-ConfigValue "OPERATOR_PASSWORD" "") -eq $LegacyDemoPassword
+) {
+    $envContents = [System.IO.File]::ReadAllText((Resolve-Path ".env"))
+    $envContents = [regex]::Replace(
+        $envContents,
+        "(?m)^OPERATOR_PASSWORD=$([regex]::Escape($LegacyDemoPassword))\s*$",
+        "OPERATOR_PASSWORD=admin123"
+    )
+    $envContents = [regex]::Replace(
+        $envContents,
+        "(?m)^APP_OPERATOR_PASSWORD=$([regex]::Escape($LegacyDemoPassword))\s*$",
+        "APP_OPERATOR_PASSWORD=admin123"
+    )
+    [System.IO.File]::WriteAllText(
+        (Resolve-Path ".env"),
+        $envContents,
+        [System.Text.UTF8Encoding]::new($false)
+    )
+    Write-Success "Updated legacy demo placeholder credentials to admin / admin123"
+}
+
 $FrontendPort = [int](Get-ConfigValue "FRONTEND_PORT" "3000")
 $BackendPort = [int](Get-ConfigValue "BACKEND_PORT" "8000")
 $ComposeProject = Get-ConfigValue "COMPOSE_PROJECT_NAME" "norseai"

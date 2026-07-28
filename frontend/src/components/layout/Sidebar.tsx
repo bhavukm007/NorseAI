@@ -6,13 +6,13 @@ import {
   CircleDollarSign,
   FileClock,
   Gauge,
-  Landmark,
   ReceiptText,
   Network,
   ShieldCheck,
   X,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { BrandMark } from "../brand/BrandMark";
 
 const navigation = [
   { label: "Overview", path: "/dashboard", icon: Gauge },
@@ -39,7 +39,7 @@ export function Sidebar({ collapsed, mobileOpen, onCollapse, onNavigate }: Sideb
     <aside className={`sidebar ${mobileOpen ? "mobile-open" : ""}`} id="primary-sidebar">
       <div className="brand">
         <span className="brand-mark" aria-hidden="true">
-          <Landmark size={19} strokeWidth={2.2} />
+          <BrandMark />
         </span>
         <div className="brand-copy">
           <strong>NorseAI</strong>

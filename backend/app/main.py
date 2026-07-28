@@ -1,13 +1,17 @@
 """FastAPI application factory and ASGI entry point."""
 
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import get_swagger_ui_html, get_swagger_ui_oauth2_redirect_html
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
@@ -21,6 +25,7 @@ from backend.app.core.security import (
     hash_password,
     request_id_context,
     valid_request_identifier,
+    verify_password,
 )
 from backend.app.db import Base, build_session_factory
 from backend.app.errors import AppError
@@ -66,6 +71,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                         )
                         operator.enabled = True
                         session.commit()
+                    elif (
+                        resolved_settings.operator_password.get_secret_value() == "admin123"
+                        and verify_password(
+                            "replace-with-a-strong-bootstrap-password",
+                            operator.password_hash,
+                        )
+                    ):
+                        operator.password_hash = hash_password("admin123")
+                        operator.enabled = True
+                        session.commit()
+                        logger.info(
+                            "demo_administrator_credentials_migrated",
+                            extra={"username": resolved_settings.operator_username},
+                        )
                     logger.info(
                         "demo_administrator_detected",
                         extra={"username": resolved_settings.operator_username},
@@ -84,7 +103,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         title=resolved_settings.name,
         version=resolved_settings.version,
         debug=resolved_settings.debug,
-        docs_url="/docs" if resolved_settings.docs_enabled else None,
+        docs_url=None,
         redoc_url="/redoc" if resolved_settings.docs_enabled else None,
         openapi_url=(
             f"{resolved_settings.api_v1_prefix}/openapi.json"
@@ -137,10 +156,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         response.headers["X-Correlation-ID"] = correlation_id
         if path in {"/docs", "/redoc"}:
             response.headers["Content-Security-Policy"] = (
-                "default-src 'none'; "
-                "script-src 'unsafe-inline' https://cdn.jsdelivr.net; "
-                "style-src 'unsafe-inline' https://cdn.jsdelivr.net; "
-                "img-src data: https://fastapi.tiangolo.com; "
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline'; "
+                "style-src 'self' 'unsafe-inline'; "
+                "img-src 'self' data:; "
                 "connect-src 'self'; "
                 "frame-ancestors 'none'; base-uri 'none'"
             )
@@ -205,6 +224,32 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
 
     if resolved_settings.docs_enabled:
+        swagger_assets_path = Path(
+            os.environ.get(
+                "SWAGGER_UI_ASSETS_PATH",
+                str(Path(__file__).resolve().parent / "swagger-ui"),
+            )
+        )
+        application.mount(
+            "/docs-assets",
+            StaticFiles(directory=swagger_assets_path, check_dir=False),
+            name="swagger-ui-assets",
+        )
+
+        @application.get("/docs", include_in_schema=False)
+        def swagger_ui():
+            return get_swagger_ui_html(
+                openapi_url=f"{resolved_settings.api_v1_prefix}/openapi.json",
+                title=f"{resolved_settings.name} - Swagger UI",
+                oauth2_redirect_url="/docs/oauth2-redirect",
+                swagger_js_url="/docs-assets/swagger-ui-bundle.js",
+                swagger_css_url="/docs-assets/swagger-ui.css",
+                swagger_favicon_url="/docs-assets/favicon-32x32.png",
+            )
+
+        @application.get("/docs/oauth2-redirect", include_in_schema=False)
+        def swagger_ui_redirect():
+            return get_swagger_ui_oauth2_redirect_html()
 
         @application.get("/openapi.json", include_in_schema=False)
         def root_openapi_schema():

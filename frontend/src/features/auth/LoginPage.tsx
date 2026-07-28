@@ -1,7 +1,8 @@
-import { ShieldCheck } from "lucide-react";
+import { LockKeyhole } from "lucide-react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
+import { BrandMark } from "../../components/brand/BrandMark";
 import { useAuth } from "./auth";
 
 export function LoginPage() {
@@ -32,9 +33,13 @@ export function LoginPage() {
           }
         }}
       >
-        <span className="login-mark">
-          <ShieldCheck size={28} />
-        </span>
+        <div className="login-brand">
+          <BrandMark />
+          <div>
+            <strong>NorseAI</strong>
+            <span>Governance intelligence</span>
+          </div>
+        </div>
         <span className="eyebrow">Operator access</span>
         <h1>Govern financial agents</h1>
         <p>Sign in to manage fleets, policies, budgets, emergency controls, and audit evidence.</p>
@@ -47,7 +52,7 @@ export function LoginPage() {
           Username
           <input
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            onChange={(event) => setUsername(event.target.value)}
             autoComplete="username"
           />
         </label>
@@ -56,13 +61,16 @@ export function LoginPage() {
           <input
             type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(event) => setPassword(event.target.value)}
             autoComplete="current-password"
           />
         </label>
         <button className="primary-button" disabled={busy}>
-          {busy ? "Signing in…" : "Sign in"}
+          {busy ? "Signing in…" : "Sign in securely"}
         </button>
+        <span className="login-security-note">
+          <LockKeyhole size={13} aria-hidden="true" /> Protected operator session
+        </span>
       </form>
     </main>
   );
