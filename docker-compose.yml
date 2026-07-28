@@ -8,7 +8,7 @@ services:
     environment:
       APP_ENVIRONMENT: ${APP_ENVIRONMENT:-production}
       APP_DOCS_ENABLED: ${APP_DOCS_ENABLED:-false}
-      APP_DATABASE_URL: postgresql+psycopg://norseai:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-norseai}
+      APP_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-norseai}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-norseai}
       APP_JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       APP_OPERATOR_PASSWORD: ${OPERATOR_PASSWORD:?OPERATOR_PASSWORD is required}
       APP_JWT_ISSUER: ${JWT_ISSUER:-norseai}

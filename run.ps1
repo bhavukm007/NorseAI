@@ -1,5 +1,7 @@
 [CmdletBinding()]
-param()
+param(
+    [switch]$NonInteractive
+)
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
@@ -33,46 +35,213 @@ function Get-ConfigValue([string]$Name, [string]$Default) {
     return $Default
 }
 
-function Test-Port([int]$Port) {
-    $client = [System.Net.Sockets.TcpClient]::new()
-    try {
-        $connection = $client.ConnectAsync("127.0.0.1", $Port)
-        return $connection.Wait(300) -and $client.Connected
-    }
-    catch {
-        return $false
-    }
-    finally {
-        $client.Dispose()
+function Get-DockerPortOwners([int]$HostPort) {
+    $containerIds = @(docker ps --quiet)
+    foreach ($containerId in $containerIds) {
+        $details = (docker inspect $containerId | ConvertFrom-Json)[0]
+        $ownsPort = $false
+        foreach ($publishedPort in $details.NetworkSettings.Ports.PSObject.Properties) {
+            foreach ($binding in @($publishedPort.Value)) {
+                if ($binding -and $binding.HostPort -eq "$HostPort") {
+                    $ownsPort = $true
+                }
+            }
+        }
+        if ($ownsPort) {
+            $labels = $details.Config.Labels
+            [pscustomobject]@{
+                Id      = $details.Id.Substring(0, 12)
+                Name    = $details.Name.TrimStart("/")
+                Project = if ($labels) { $labels."com.docker.compose.project" } else { $null }
+                Service = if ($labels) { $labels."com.docker.compose.service" } else { $null }
+            }
+        }
     }
 }
 
-function Test-ComposeOwnsPort(
-    [string]$Project,
-    [string]$Service,
-    [int]$ContainerPort,
-    [int]$HostPort
+function Get-WindowsPortListeners([int]$HostPort) {
+    $connections = @(Get-NetTCPConnection -State Listen -LocalPort $HostPort -ErrorAction SilentlyContinue)
+    foreach ($processId in @($connections | ForEach-Object { $_.OwningProcess } | Sort-Object -Unique)) {
+        if (-not $processId) {
+            continue
+        }
+
+        $process = Get-Process -Id $processId -ErrorAction SilentlyContinue
+        $processDetails = $null
+        try {
+            $processDetails = Get-CimInstance Win32_Process -Filter "ProcessId = $processId" -ErrorAction Stop
+        }
+        catch {
+            # Command-line access can be unavailable for protected processes.
+        }
+
+        [pscustomobject]@{
+            ProcessId   = $processId
+            ProcessName = if ($process) { $process.ProcessName } else { "<unavailable>" }
+            CommandLine = if ($processDetails -and $processDetails.CommandLine) {
+                $processDetails.CommandLine
+            }
+            else {
+                "<unavailable>"
+            }
+        }
+    }
+}
+
+function Assert-PortAvailable(
+    [int]$HostPort,
+    [string]$ExpectedService,
+    [string]$Project
 ) {
-    $containerIds = @(
-        docker ps --quiet `
-            --filter "label=com.docker.compose.project=$Project" `
-            --filter "label=com.docker.compose.service=$Service"
-    )
-    if ($LASTEXITCODE -ne 0 -or $containerIds.Count -eq 0) {
+    $dockerOwners = @(Get-DockerPortOwners $HostPort)
+    if ($dockerOwners.Count -gt 0) {
+        $foreignOwners = @($dockerOwners | Where-Object {
+            $_.Project -ne $Project -or $_.Service -ne $ExpectedService
+        })
+        if ($foreignOwners.Count -gt 0) {
+            foreach ($owner in $foreignOwners) {
+                $composeDetails = if ($owner.Project) {
+                    " (Compose project: $($owner.Project), service: $($owner.Service))"
+                }
+                else {
+                    ""
+                }
+                Write-Host "[CONFLICT] Port $HostPort is published by Docker container '$($owner.Name)' [$($owner.Id)]$composeDetails." -ForegroundColor Red
+            }
+            throw "Port $HostPort is already published by another Docker container."
+        }
+
+        foreach ($owner in $dockerOwners) {
+            Write-Success "Port $HostPort is already published by NorseAI container '$($owner.Name)'"
+        }
+        return
+    }
+
+    $listeners = @(Get-WindowsPortListeners $HostPort)
+    if ($listeners.Count -eq 0) {
+        Write-Success "Port $HostPort is available"
+        return
+    }
+
+    $unrelatedListeners = @($listeners | Where-Object { $_.ProcessName -ne "com.docker.backend" })
+    if ($unrelatedListeners.Count -eq 0) {
+        foreach ($listener in $listeners) {
+            Write-Host "[INFO] Port $HostPort listener: PID $($listener.ProcessId), process '$($listener.ProcessName)', command line: $($listener.CommandLine)"
+        }
+        Write-Success "Port $HostPort is held only by Docker Desktop; continuing"
+        return
+    }
+
+    foreach ($listener in $listeners) {
+        Write-Host "[CONFLICT] Port $HostPort listener: PID $($listener.ProcessId), process '$($listener.ProcessName)', command line: $($listener.CommandLine)" -ForegroundColor Red
+    }
+    throw "Port $HostPort is already in use by an unrelated application."
+}
+
+function Test-ServiceHealthy([string]$Service) {
+    $containerId = docker compose ps --quiet $Service
+    if ($LASTEXITCODE -ne 0 -or -not $containerId) {
         return $false
     }
 
-    foreach ($containerId in $containerIds) {
-        $details = @(docker inspect $containerId | ConvertFrom-Json)
-        if ($LASTEXITCODE -ne 0 -or $details.Count -eq 0) {
-            continue
-        }
-        $binding = $details[0].NetworkSettings.Ports."$ContainerPort/tcp"
-        if ($binding -and [int]$binding[0].HostPort -eq $HostPort) {
-            return $true
+    $status = docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' $containerId
+    return $LASTEXITCODE -eq 0 -and $status -eq "healthy"
+}
+
+function Test-PostgresCredentials {
+    $previousErrorPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Continue"
+        $authenticationOutput = @(
+            docker compose run --rm --no-deps backend `
+                python `
+                -c `
+                "import os; from sqlalchemy import create_engine; create_engine(os.environ['APP_DATABASE_URL']).connect().close()" 2>&1
+        )
+        return [pscustomobject]@{
+            Succeeded = $LASTEXITCODE -eq 0
+            Output    = ($authenticationOutput -join [Environment]::NewLine)
         }
     }
-    return $false
+    finally {
+        $ErrorActionPreference = $previousErrorPreference
+    }
+}
+
+function Show-PostgresCredentialMismatch(
+    [string]$DatabaseUser,
+    [string]$DatabaseName
+) {
+    Write-Host ""
+    Write-Host "----------------------------------------------------" -ForegroundColor Yellow
+    Write-Host "Existing PostgreSQL volume appears to have been"
+    Write-Host "initialized with different credentials."
+    Write-Host ""
+    Write-Host "Current credentials:"
+    Write-Host "User:     $DatabaseUser"
+    Write-Host "Database: $DatabaseName"
+    Write-Host ""
+    Write-Host "Existing database rejected authentication."
+    Write-Host ""
+    Write-Host "Possible fixes:"
+    Write-Host ""
+    Write-Host "1. Keep your existing database and restore the previous password."
+    Write-Host ""
+    Write-Host "2. Recreate the development database (this permanently deletes"
+    Write-Host "   the Compose project's PostgreSQL and Redis volume data):"
+    Write-Host ""
+    Write-Host "docker compose down -v" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "Then run:"
+    Write-Host ""
+    Write-Host ".\run.ps1" -ForegroundColor Cyan
+    Write-Host "----------------------------------------------------" -ForegroundColor Yellow
+}
+
+function Assert-PostgresCredentials(
+    [string]$DatabaseUser,
+    [string]$DatabaseName
+) {
+    $result = Test-PostgresCredentials
+    if ($result.Succeeded) {
+        Write-Success "PostgreSQL credentials accepted"
+        return
+    }
+
+    if ($result.Output -notmatch "password authentication failed") {
+        Write-Host $result.Output -ForegroundColor Red
+        throw "PostgreSQL credential validation failed for a reason other than password authentication."
+    }
+
+    Show-PostgresCredentialMismatch $DatabaseUser $DatabaseName
+    if ($NonInteractive -or [Console]::IsInputRedirected) {
+        throw "PostgreSQL authentication mismatch. Interactive confirmation is required to recreate volumes; no data was changed."
+    }
+
+    $confirmation = Read-Host "Type RECREATE to delete the development volumes and rebuild, or press Enter to stop"
+    if ($confirmation -cne "RECREATE") {
+        throw "PostgreSQL authentication mismatch. No data was changed."
+    }
+
+    Write-Warning "Deleting this Compose project's PostgreSQL and Redis development volumes."
+    docker compose down --volumes
+    if ($LASTEXITCODE -ne 0) {
+        throw "Docker Compose could not remove the development volumes."
+    }
+
+    Write-Step "Recreating containers with the current credentials..."
+    docker compose up --build --detach
+    if ($LASTEXITCODE -ne 0) {
+        throw "Docker Compose failed to recreate NorseAI."
+    }
+
+    Wait-Service "postgres" "PostgreSQL"
+    $retry = Test-PostgresCredentials
+    if (-not $retry.Succeeded) {
+        Write-Host $retry.Output -ForegroundColor Red
+        throw "PostgreSQL still rejected the configured credentials after recreation."
+    }
+    Write-Success "PostgreSQL credentials accepted after recreation"
 }
 
 function Wait-Service([string]$Service, [string]$Label, [int]$TimeoutSeconds = 240) {
@@ -124,34 +293,40 @@ if (-not (Test-Path -LiteralPath ".env")) {
 $FrontendPort = [int](Get-ConfigValue "FRONTEND_PORT" "3000")
 $BackendPort = [int](Get-ConfigValue "BACKEND_PORT" "8000")
 $ComposeProject = Get-ConfigValue "COMPOSE_PROJECT_NAME" "norseai"
+$PostgresUser = Get-ConfigValue "POSTGRES_USER" "norseai"
+$PostgresDatabase = Get-ConfigValue "POSTGRES_DB" "norseai"
 $FrontendOrigin = Get-ConfigValue "FRONTEND_ORIGIN" "http://localhost:$FrontendPort"
 $PublicApiBaseUrl = Get-ConfigValue "PUBLIC_API_BASE_URL" "http://localhost:$BackendPort/api/v1"
 $env:FRONTEND_ORIGIN = $FrontendOrigin
 $env:PUBLIC_API_BASE_URL = $PublicApiBaseUrl
 
 Write-Step "Checking ports..."
-if (
-    (Test-Port $FrontendPort) -and
-    -not (Test-ComposeOwnsPort $ComposeProject "frontend" 80 $FrontendPort)
-) {
-    throw "Frontend port $FrontendPort is already occupied. Set FRONTEND_PORT in .env to a free port."
-}
-if (
-    (Test-Port $BackendPort) -and
-    -not (Test-ComposeOwnsPort $ComposeProject "backend" 8000 $BackendPort)
-) {
-    throw "Backend port $BackendPort is already occupied. Set BACKEND_PORT in .env to a free port."
-}
-Write-Success "Required ports available"
+Assert-PortAvailable $FrontendPort "frontend" $ComposeProject
+Assert-PortAvailable $BackendPort "backend" $ComposeProject
 
-Write-Step "Building and starting containers..."
-docker compose up --build --detach
-if ($LASTEXITCODE -ne 0) {
-    throw "Docker Compose failed to start NorseAI."
+$RequiredServices = @("postgres", "redis", "opa", "backend", "frontend")
+$StackIsHealthy = $true
+foreach ($service in $RequiredServices) {
+    if (-not (Test-ServiceHealthy $service)) {
+        $StackIsHealthy = $false
+        break
+    }
+}
+
+if ($StackIsHealthy) {
+    Write-Success "Existing NorseAI stack is healthy; reusing it"
+}
+else {
+    Write-Step "Building and starting containers..."
+    docker compose up --build --detach
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "Docker Compose reported a startup failure. Checking service health for a specific diagnosis..."
+    }
 }
 
 Write-Step "Waiting for services..."
 Wait-Service "postgres" "PostgreSQL"
+Assert-PostgresCredentials $PostgresUser $PostgresDatabase
 Wait-Service "redis" "Redis"
 Wait-Service "opa" "OPA"
 Wait-Service "backend" "Backend"
