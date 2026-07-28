@@ -101,7 +101,8 @@ class BudgetService(Service):
                     used = Decimal("0")
                 else:
                     window = SpendService._window(limit.period, timestamp)
-                    assert window is not None
+                    if window is None:
+                        raise RuntimeError("Non-transaction budget requires a spend window")
                     used = (
                         self.repos.spent_between(agent_id, currency, window[0], window[1])
                         if scope == "agent"

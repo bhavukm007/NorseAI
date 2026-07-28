@@ -77,6 +77,39 @@ from operational financial records and uses validated browser-local storage.
 | Delivery | Docker, Nginx, Docker Compose, GitHub Actions |
 | Quality | Pytest, Vitest, Testing Library, Ruff, Black, ESLint, Prettier |
 
+## Quick Start
+
+Requirements: Docker Desktop (Windows/macOS) or Docker Engine with Docker Compose v2 (Linux).
+
+```text
+git clone https://github.com/bhavukm007/NorseAI.git
+cd NorseAI
+```
+
+### Windows
+
+```powershell
+.\run.ps1
+```
+
+### Linux/macOS
+
+```bash
+chmod +x run.sh
+./run.sh
+```
+
+The runner verifies Docker and Compose, creates `.env` from `.env.example` when needed, checks the
+configured ports, builds the containers, waits for every service health check, and prints the
+frontend, backend, and Swagger URLs. Existing `.env` files are never overwritten.
+
+Stop the stack with `.\stop.ps1` on Windows or `bash stop.sh` on Linux/macOS. To remove containers,
+PostgreSQL/Redis volumes, and unused Docker data, run `.\clean.ps1` or `bash clean.sh`; cleanup
+requires typing `CLEAN` before any data is removed.
+
+If `make` is available, the equivalent commands are `make run`, `make stop`, `make logs`, and
+`make clean`.
+
 ## Local setup
 
 Requirements: Python 3.11+, Node.js 20+, and PostgreSQL. Copy `.env.example` before starting the
